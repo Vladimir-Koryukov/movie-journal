@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Мои фильмы — Movie Journal</title>
+  </head>
+  <body>
+    <main id="app">
+      <h1>Мои фильмы</h1>
+
+      <form id="entry-form">
+        <fieldset>
+          <legend>Добавить фильм</legend>
+
+          <button id="cancel-edit-button" type="button" hidden>
+            Отменить редактирование
+          </button>
+
+          <label>
+            Название *
+            <input name="title" type="text" required maxlength="300" />
+          </label>
+
+          <label>
+            Год выпуска
+            <input
+              name="releaseYear"
+              type="number"
+              min="1"
+              max="2147483647"
+              step="1"
+            />
+          </label>
+
+          <label>
+            Статус
+            <select name="status">
+              <option value="PLANNED">Планирую посмотреть</option>
+              <option value="WATCHED">Просмотрен</option>
+            </select>
+          </label>
+
+          <label>
+            Оценка
+            <input
+              name="rating"
+              type="number"
+              min="1"
+              max="10"
+              step="1"
+              disabled
+            />
+            <small>Оценку можно поставить просмотренному фильму.</small>
+          </label>
+
+          <label>
+            Заметка
+            <textarea name="notes" rows="3"></textarea>
+          </label>
+
+          <button type="submit">Добавить фильм</button>
+        </fieldset>
+
+        <p id="form-feedback" role="status"></p>
+      </form>
+
+      <div class="list-toolbar">
+        <label>
+          Показать фильмы
+          <select id="status-filter">
+            <option value="">Все</option>
+            <option value="PLANNED">Планирую посмотреть</option>
+            <option value="WATCHED">Просмотренные</option>
+          </select>
+        </label>
+
+        <button id="refresh-button" type="button">
+          Обновить
+        </button>
+      </div>
+
+      <p id="feedback" role="status"></p>
+
+      <p id="action-feedback" role="status"></p>
+
+      <ul id="entries" aria-label="Список фильмов"></ul>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
