@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>dev.vladimir</groupId>
 	<artifactId>movie-journal</artifactId>
-	<version>0.1.0</version>
+	<version>0.2.0</version>
 	<name/>
 	<description/>
 	<url/>
@@ -89,32 +89,6 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy-frontend</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>
-								${project.build.outputDirectory}/static
-							</outputDirectory>
-							<resources>
-								<resource>
-									<directory>
-										${project.basedir}/../frontend/dist
-									</directory>
-									<filtering>false</filtering>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 
