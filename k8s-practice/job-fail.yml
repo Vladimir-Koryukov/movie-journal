@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hello-fail
+spec:
+  completions: 1
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: hello
+          image: busybox:1.37
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              date
+              echo "Intentional failure for training"
+              exit 1

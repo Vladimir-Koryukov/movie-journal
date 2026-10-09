@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: movie-journal
+data:
+  DB_NAME: movie_journal
+  DB_USERNAME: movie_journal_app
+  DB_URL: jdbc:postgresql://db:5432/movie_journal
+  PORT: "8080"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+  namespace: movie-journal
+type: Opaque
+stringData:
+  DB_PASSWORD: training-only-password
