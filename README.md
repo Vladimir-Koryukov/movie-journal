@@ -62,6 +62,4 @@ docker compose down
 
 ## Запуск в Kubernetes
 
-[Инструкция для Windows с Docker Desktop и Minikube](k8s/README.md) содержит установку инструментов, сборку, запуск и проверки. [Сценарий видео](k8s/Сценарий-видео.md) — отдельная последовательность демонстрации на 5–7 минут.
-
-В [k8s-practice](k8s-practice/README.md) находятся манифесты учебных упражнений с основными объектами Kubernetes.
+[Инструкция для Windows с Docker Desktop и Minikube](k8s/README.md) содержит установку инструментов, сборку, запуск и проверки.
