@@ -59,7 +59,3 @@ docker compose down
 ```
 
 Данные PostgreSQL сохраняются в Docker volume. Не добавляйте `-v`, если хотите сохранить записи. Для повторного запуска выполните `docker compose up -d`.
-
-## Запуск в Kubernetes
-
-[Инструкция для Windows с Docker Desktop и Minikube](k8s/README.md) содержит установку инструментов, сборку, запуск и проверки.
