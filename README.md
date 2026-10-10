@@ -59,3 +59,7 @@ docker compose down
 ```
 
 Данные PostgreSQL сохраняются в Docker volume. Не добавляйте `-v`, если хотите сохранить записи. Для повторного запуска выполните `docker compose up -d`.
+
+## Запуск в Kubernetes
+
+Манифесты и [инструкция запуска в Minikube](k8s/README.md) находятся в папке `k8s`. PostgreSQL использует постоянный том, миграции выполняются отдельным Job, backend и frontend запускаются через Deployment.
