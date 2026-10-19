@@ -135,6 +135,8 @@ kubectl logs -n movie-journal deployment/backend --tail=60
 kubectl logs -n movie-journal job/migrate --tail=60
 ```
 
+Для централизованного сбора логов приложения доступны [VictoriaLogs и Vector](logging/README.md): манифесты, настройка доступа и примеры запросов LogsQL.
+
 ## Остановка
 
 Завершите port-forward через `Ctrl+C`, затем выполните:

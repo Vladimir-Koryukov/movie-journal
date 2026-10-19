@@ -15,8 +15,16 @@ data:
         default_type application/octet-stream;
         sendfile on;
 
+        map $status $log_level {
+            ~^5     error;
+            ~^4     warn;
+            default info;
+        }
+
         log_format json escape=json
-            '{"time":"$time_iso8601","method":"$request_method",'
+            '{"timestamp":"$time_iso8601","level":"$log_level",'
+            '"message":"HTTP request completed",'
+            '"service":{"name":"movie-journal-frontend"},"method":"$request_method",'
             '"path":"$uri","status":$status,"request_time":$request_time,'
             '"upstream_addr":"$upstream_addr","upstream_status":"$upstream_status"}';
         access_log /dev/stdout json;

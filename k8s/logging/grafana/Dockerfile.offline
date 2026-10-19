@@ -1,0 +1,15 @@
+FROM grafana/grafana:12.1.0
+
+ENV GF_PATHS_PLUGINS=/var/lib/grafana-plugins
+
+USER root
+COPY victoriametrics-logs-datasource-0.33.1.zip /tmp/victorialogs-plugin.zip
+RUN mkdir -p "$GF_PATHS_PLUGINS" \
+    && busybox unzip -q /tmp/victorialogs-plugin.zip -d "$GF_PATHS_PLUGINS" \
+    && test -f "$GF_PATHS_PLUGINS/victoriametrics-logs-datasource/plugin.json" \
+    && test -f "$GF_PATHS_PLUGINS/victoriametrics-logs-datasource/MANIFEST.txt" \
+    && chmod +x "$GF_PATHS_PLUGINS"/victoriametrics-logs-datasource/victoriametrics_logs_backend_plugin_linux_* \
+    && chown -R 472:0 "$GF_PATHS_PLUGINS" \
+    && rm /tmp/victorialogs-plugin.zip
+
+USER 472

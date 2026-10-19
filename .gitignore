@@ -9,3 +9,6 @@ target/
 
 # Report (not for GitHub)
 Отчёт.md
+
+# Downloaded Grafana plugin packages
+/k8s/logging/grafana/*.zip

@@ -1,0 +1,11 @@
+# 1. Последние JSON-события за 60 минут
+_time:60m structured:true | sort by (_time) desc | limit 100
+
+# 2. Предупреждения frontend
+_time:60m structured:true service.name:movie-journal-frontend level:warn | sort by (_time) desc | limit 100 | fields _time, service.name, level, status, method, path, _msg
+
+# 3. Число событий по сервисам и уровням
+_time:60m structured:true | stats by (service.name, level) count() as logs
+
+# 4. Пять самых частых HTTP-методов frontend
+_time:60m structured:true service.name:movie-journal-frontend | top 5 by (method)

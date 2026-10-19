@@ -63,3 +63,5 @@ docker compose down
 ## Запуск в Kubernetes
 
 Манифесты и [инструкция запуска в Minikube](k8s/README.md) находятся в папке `k8s`. PostgreSQL использует постоянный том, миграции выполняются отдельным Job, backend и frontend запускаются через Deployment.
+
+Для сбора и поиска логов приложения доступны [VictoriaLogs и Vector](k8s/logging/README.md) с примерами запросов LogsQL.

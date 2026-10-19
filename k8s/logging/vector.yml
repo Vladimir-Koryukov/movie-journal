@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vector
+  namespace: logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: movie-journal-vector
+rules:
+  - apiGroups: [""]
+    resources: [pods, namespaces, nodes]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: movie-journal-vector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: movie-journal-vector
+subjects:
+  - kind: ServiceAccount
+    name: vector
+    namespace: logging
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-config
+  namespace: logging
+data:
+  vector.yaml: |
+    data_dir: /var/lib/vector
+
+    api:
+      enabled: true
+      address: 0.0.0.0:8686
+
+    sources:
+      application:
+        type: kubernetes_logs
+        self_node_name: ${VECTOR_SELF_NODE_NAME}
+        extra_field_selector: metadata.namespace=movie-journal
+        extra_label_selector: app in (backend,frontend)
+
+    transforms:
+      application_json:
+        type: remap
+        inputs: [application]
+        source: |
+          parsed, parse_error = parse_json(.message)
+          if parse_error == null && is_object(parsed) {
+            . = merge(., object!(parsed))
+            .structured = true
+          } else {
+            .structured = false
+          }
+
+          if exists(."@timestamp") {
+            .timestamp = del(."@timestamp")
+          } else if exists(.time) {
+            .timestamp = del(.time)
+          }
+
+          .level = downcase(string(.level) ?? string(.log.level) ?? "info")
+          if !.structured && .stream == "stderr" {
+            .level = "warn"
+          }
+          if !exists(.service.name) {
+            if .kubernetes.container_name == "frontend" {
+              .service.name = "movie-journal-frontend"
+            } else {
+              .service.name = "movie-journal"
+            }
+          }
+
+    sinks:
+      victorialogs:
+        type: elasticsearch
+        inputs: [application_json]
+        endpoints:
+          - http://victorialogs.logging.svc.cluster.local:9428/insert/elasticsearch/
+        api_version: v8
+        mode: bulk
+        compression: gzip
+        healthcheck:
+          enabled: false
+        query:
+          _msg_field: message
+          _time_field: timestamp
+          _stream_fields: service.name,kubernetes.pod_namespace,kubernetes.container_name
+        batch:
+          max_bytes: 1048576
+          timeout_secs: 1
+        buffer:
+          type: disk
+          max_size: 536870912
+          when_full: block
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vector
+  namespace: logging
+spec:
+  selector:
+    matchLabels:
+      app: vector
+  template:
+    metadata:
+      labels:
+        app: vector
+    spec:
+      serviceAccountName: vector
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: vector
+          image: timberio/vector:0.59.0-distroless-libc
+          imagePullPolicy: IfNotPresent
+          args: [--config, /etc/vector/vector.yaml]
+          env:
+            - name: VECTOR_SELF_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - name: api
+              containerPort: 8686
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: api
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: api
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vector
+              readOnly: true
+            - name: logs
+              mountPath: /var/log
+              readOnly: true
+            - name: docker-logs
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/vector
+      volumes:
+        - name: config
+          configMap:
+            name: vector-config
+        - name: logs
+          hostPath:
+            path: /var/log
+            type: Directory
+        - name: docker-logs
+          hostPath:
+            path: /var/lib/docker/containers
+            type: DirectoryOrCreate
+        - name: data
+          hostPath:
+            path: /var/lib/movie-journal-vector
+            type: DirectoryOrCreate

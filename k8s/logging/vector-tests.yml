@@ -1,0 +1,85 @@
+tests:
+  - name: backend ECS JSON preserves metadata and normalizes severity
+    inputs:
+      - insert_at: application_json
+        type: log
+        log_fields:
+          message: '{"@timestamp":"2026-10-13T19:00:00Z","log":{"level":"ERROR"},"message":"Backend failed","service":{"name":"movie-journal"}}'
+          stream: stdout
+          kubernetes:
+            pod_name: backend-test
+            container_name: backend
+    outputs:
+      - extract_from: application_json
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.timestamp, "2026-10-13T19:00:00Z")
+              assert_eq!(.level, "error")
+              assert_eq!(.message, "Backend failed")
+              assert_eq!(.service.name, "movie-journal")
+              assert_eq!(.kubernetes.pod_name, "backend-test")
+              assert_eq!(.structured, true)
+  - name: frontend JSON retains HTTP fields and metadata
+    inputs:
+      - insert_at: application_json
+        type: log
+        log_fields:
+          message: '{"timestamp":"2026-10-13T19:00:01+00:00","level":"warn","message":"HTTP request completed","service":{"name":"movie-journal-frontend"},"method":"GET","path":"/missing","status":404,"request_time":0.012}'
+          stream: stdout
+          kubernetes:
+            pod_name: frontend-test
+            container_name: frontend
+    outputs:
+      - extract_from: application_json
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.timestamp, "2026-10-13T19:00:01+00:00")
+              assert_eq!(.level, "warn")
+              assert_eq!(.message, "HTTP request completed")
+              assert_eq!(.service.name, "movie-journal-frontend")
+              assert_eq!(.method, "GET")
+              assert_eq!(.path, "/missing")
+              assert_eq!(.status, 404)
+              assert_eq!(.request_time, 0.012)
+              assert_eq!(.kubernetes.pod_name, "frontend-test")
+              assert_eq!(.structured, true)
+  - name: plain stderr survives parsing
+    inputs:
+      - insert_at: application_json
+        type: log
+        log_fields:
+          message: 'nginx: configuration warning'
+          stream: stderr
+          timestamp: '2026-10-13T19:00:02Z'
+          kubernetes:
+            container_name: frontend
+    outputs:
+      - extract_from: application_json
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.message, "nginx: configuration warning")
+              assert_eq!(.timestamp, "2026-10-13T19:00:02Z")
+              assert_eq!(.level, "warn")
+              assert_eq!(.structured, false)
+              assert_eq!(.service.name, "movie-journal-frontend")
+  - name: nonobject JSON does not replace event
+    inputs:
+      - insert_at: application_json
+        type: log
+        log_fields:
+          message: '[1,2]'
+          stream: stdout
+          kubernetes:
+            container_name: backend
+    outputs:
+      - extract_from: application_json
+        conditions:
+          - type: vrl
+            source: |
+              assert_eq!(.message, "[1,2]")
+              assert_eq!(.level, "info")
+              assert_eq!(.structured, false)
+              assert_eq!(.service.name, "movie-journal")
