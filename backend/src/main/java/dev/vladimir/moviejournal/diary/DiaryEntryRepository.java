@@ -10,14 +10,22 @@ import java.util.Optional;
 public interface DiaryEntryRepository
         extends JpaRepository<DiaryEntry, Long> {
 
-    @Override
     @EntityGraph(attributePaths = "movie")
-    List<DiaryEntry> findAll(Sort sort);
-
-    @Override
-    @EntityGraph(attributePaths = "movie")
-    Optional<DiaryEntry> findById(Long id);
+    Optional<DiaryEntry> findByIdAndOwner_Login(
+            Long id,
+            String ownerLogin
+    );
 
     @EntityGraph(attributePaths = "movie")
-    List<DiaryEntry> findAllByStatus(DiaryStatus status, Sort sort);
+    List<DiaryEntry> findAllByOwner_Login(
+            String ownerLogin,
+            Sort sort
+    );
+
+    @EntityGraph(attributePaths = "movie")
+    List<DiaryEntry> findAllByOwner_LoginAndStatus(
+            String ownerLogin,
+            DiaryStatus status,
+            Sort sort
+    );
 }

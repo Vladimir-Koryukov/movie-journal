@@ -10,27 +10,27 @@ import org.springframework.boot.flyway.autoconfigure.FlywayMigrationInitializer;
 @SpringBootApplication
 public class MovieJournalApplication {
 
-	public static void main(String[] args) {
-		var arguments = new DefaultApplicationArguments(args);
+    public static void main(String[] args) {
+        var arguments = new DefaultApplicationArguments(args);
 
-		if (arguments.containsOption("migrate")) {
-			runMigrations(args);
-			return;
-		}
+        if (arguments.containsOption("migrate")) {
+            runMigrations(args);
+            return;
+        }
 
-		SpringApplication.run(MovieJournalApplication.class, args);
-	}
+        SpringApplication.run(MovieJournalApplication.class, args);
+    }
 
-	private static void runMigrations(String[] args) {
-		var application = new SpringApplication(
-				MigrationConfiguration.class
-		);
+    private static void runMigrations(String[] args) {
+        var application = new SpringApplication(
+                MigrationConfiguration.class
+        );
 
-		application.setWebApplicationType(WebApplicationType.NONE);
-		application.setAdditionalProfiles("migration");
+        application.setWebApplicationType(WebApplicationType.NONE);
+        application.setAdditionalProfiles("migration");
 
-		try (var context = application.run(args)) {
-			context.getBean(FlywayMigrationInitializer.class);
-		}
-	}
+        try (var context = application.run(args)) {
+            context.getBean(FlywayMigrationInitializer.class);
+        }
+    }
 }

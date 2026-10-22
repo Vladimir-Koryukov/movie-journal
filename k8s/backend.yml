@@ -29,7 +29,7 @@ spec:
       terminationGracePeriodSeconds: 40
       containers:
         - name: backend
-          image: movie-journal-backend:0.2.0
+          image: movie-journal-backend:0.3.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -42,6 +42,8 @@ spec:
           env:
             - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
               value: "true"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Djava.net.preferIPv4Stack=true"
           startupProbe:
             httpGet:
               path: /actuator/health/liveness

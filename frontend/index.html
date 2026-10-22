@@ -3,89 +3,385 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Мои фильмы — Movie Journal</title>
+    <meta
+      name="description"
+      content="Личный дневник фильмов: планы, оценки и заметки."
+    />
+    <title>Movie Journal</title>
   </head>
+
   <body>
-    <main id="app">
-      <h1>Мои фильмы</h1>
+    <div id="app" class="app-shell">
+      <header class="brand" aria-label="Movie Journal">
+        <span class="brand__mark" aria-hidden="true">MJ</span>
+        <div>
+          <p class="eyebrow">Личный кинодневник</p>
+          <h1>Movie Journal</h1>
+        </div>
+      </header>
 
-      <form id="entry-form">
-        <fieldset>
-          <legend>Добавить фильм</legend>
+      <main class="app-content">
+        <p
+          id="startup-feedback"
+          class="status-message"
+          role="status"
+          aria-live="polite"
+        >
+          Проверяем сеанс…
+        </p>
 
-          <button id="cancel-edit-button" type="button" hidden>
-            Отменить редактирование
-          </button>
+        <section id="auth-view" class="auth-page" hidden>
+          <div class="auth-card">
+            <div id="login-view">
+              <header class="auth-card__header">
+                <p class="eyebrow">С возвращением</p>
+                <h2>Вход</h2>
+                <p>Войдите, чтобы продолжить вести свой дневник.</p>
+              </header>
 
-          <label>
-            Название *
-            <input name="title" type="text" required maxlength="300" />
-          </label>
+              <form id="login-form">
+                <fieldset class="form-stack">
+                  <label class="field">
+                    <span>Имя пользователя</span>
+                    <input
+                      name="login"
+                      type="text"
+                      autocomplete="username"
+                      minlength="3"
+                      maxlength="64"
+                      pattern="[A-Za-z0-9._-]{3,64}"
+                      title="От 3 до 64 латинских букв, цифр и символов . _ -"
+                      required
+                    />
+                  </label>
 
-          <label>
-            Год выпуска
-            <input
-              name="releaseYear"
-              type="number"
-              min="1"
-              max="2147483647"
-              step="1"
-            />
-          </label>
+                  <label class="field">
+                    <span>Пароль</span>
+                    <input
+                      name="password"
+                      type="password"
+                      autocomplete="current-password"
+                      required
+                    />
+                  </label>
 
-          <label>
-            Статус
-            <select name="status">
-              <option value="PLANNED">Планирую посмотреть</option>
-              <option value="WATCHED">Просмотрен</option>
-            </select>
-          </label>
+                  <button class="button button--primary" type="submit">
+                    Войти
+                  </button>
+                </fieldset>
+              </form>
 
-          <label>
-            Оценка
-            <input
-              name="rating"
-              type="number"
-              min="1"
-              max="10"
-              step="1"
-              disabled
-            />
-            <small>Оценку можно поставить просмотренному фильму.</small>
-          </label>
+              <p class="auth-switch">
+                Ещё нет аккаунта?
+                <button
+                  id="show-register-button"
+                  class="button-link"
+                  type="button"
+                >
+                  Зарегистрироваться
+                </button>
+              </p>
+            </div>
 
-          <label>
-            Заметка
-            <textarea name="notes" rows="3"></textarea>
-          </label>
+            <div id="register-view" hidden>
+              <header class="auth-card__header">
+                <p class="eyebrow">Новый аккаунт</p>
+                <h2>Регистрация</h2>
+                <p>Создайте аккаунт — это займёт меньше минуты.</p>
+              </header>
 
-          <button type="submit">Добавить фильм</button>
-        </fieldset>
+              <form id="register-form">
+                <fieldset class="form-stack">
+                  <label class="field">
+                    <span>Имя пользователя</span>
+                    <input
+                      name="login"
+                      type="text"
+                      autocomplete="username"
+                      minlength="3"
+                      maxlength="64"
+                      pattern="[A-Za-z0-9._-]{3,64}"
+                      title="От 3 до 64 латинских букв, цифр и символов . _ -"
+                      aria-describedby="register-login-hint"
+                      required
+                    />
+                    <small id="register-login-hint">
+                      Латинские буквы, цифры и символы . _ -
+                    </small>
+                  </label>
 
-        <p id="form-feedback" role="status"></p>
-      </form>
+                  <label class="field">
+                    <span>Пароль</span>
+                    <input
+                      name="password"
+                      type="password"
+                      autocomplete="new-password"
+                      minlength="12"
+                      maxlength="72"
+                      aria-describedby="register-password-hint"
+                      required
+                    />
+                    <small id="register-password-hint">
+                      От 12 до 72 символов.
+                    </small>
+                  </label>
 
-      <div class="list-toolbar">
-        <label>
-          Показать фильмы
-          <select id="status-filter">
-            <option value="">Все</option>
-            <option value="PLANNED">Планирую посмотреть</option>
-            <option value="WATCHED">Просмотренные</option>
-          </select>
-        </label>
+                  <button class="button button--primary" type="submit">
+                    Создать аккаунт
+                  </button>
+                </fieldset>
+              </form>
 
-        <button id="refresh-button" type="button">
-          Обновить
-        </button>
-      </div>
+              <p class="auth-switch">
+                Уже есть аккаунт?
+                <button
+                  id="show-login-button"
+                  class="button-link"
+                  type="button"
+                >
+                  Войти
+                </button>
+              </p>
+            </div>
 
-      <p id="feedback" role="status"></p>
+            <p
+              id="auth-feedback"
+              class="status-message auth-card__feedback"
+              role="status"
+              aria-live="polite"
+            ></p>
+          </div>
+        </section>
 
-      <p id="action-feedback" role="status"></p>
+        <section id="diary-view" class="diary-page" hidden>
+          <header class="user-bar panel">
+            <div>
+              <p class="eyebrow">Ваш профиль</p>
+              <p class="user-bar__identity">
+                <span class="user-avatar" aria-hidden="true">●</span>
+                <strong id="current-login"></strong>
+              </p>
+            </div>
 
-      <ul id="entries" aria-label="Список фильмов"></ul>
-    </main>
+            <button
+              id="logout-button"
+              class="button button--secondary"
+              type="button"
+            >
+              Выйти
+            </button>
+          </header>
+
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">Коллекция</p>
+              <h2>Мои фильмы</h2>
+            </div>
+            <p>
+              Сохраняйте планы на просмотр, оценки и личные заметки.
+            </p>
+          </div>
+
+          <div class="diary-layout">
+            <section class="panel editor-panel" aria-label="Форма фильма">
+              <form id="entry-form">
+                <fieldset class="entry-form">
+                  <legend>Добавить фильм</legend>
+
+                  <div id="catalog-picker" class="catalog-picker field--wide">
+                    <div class="catalog-picker__heading">
+                      <div>
+                        <strong>Найти фильм в OMDb</strong>
+                        <p>
+                          Выберите фильм, чтобы добавить описание и актёров.
+                        </p>
+                      </div>
+                      <span class="source-badge">OMDb</span>
+                    </div>
+
+                    <div class="catalog-search-row">
+                      <label class="field">
+                        <span class="visually-hidden">Название для поиска</span>
+                        <input
+                          id="catalog-query"
+                          type="search"
+                          minlength="2"
+                          maxlength="100"
+                          placeholder="Название фильма"
+                          autocomplete="off"
+                        />
+                      </label>
+                      <button
+                        id="catalog-search-button"
+                        class="button button--secondary"
+                        type="button"
+                      >
+                        Найти
+                      </button>
+                    </div>
+
+                    <p
+                      id="catalog-feedback"
+                      class="status-message catalog-feedback"
+                      role="status"
+                      aria-live="polite"
+                    ></p>
+                    <ul id="catalog-results" class="catalog-results"></ul>
+
+                    <div
+                      id="catalog-selection"
+                      class="catalog-selection"
+                      hidden
+                    >
+                      <div>
+                        <span>Выбран фильм</span>
+                        <strong id="catalog-selection-title"></strong>
+                      </div>
+                      <button
+                        id="catalog-clear-button"
+                        class="button-link"
+                        type="button"
+                      >
+                        Сбросить
+                      </button>
+                    </div>
+
+                    <p class="catalog-manual-hint">
+                      Или заполните название и год вручную.
+                    </p>
+                  </div>
+
+                  <label class="field field--wide">
+                    <span>Название <span aria-hidden="true">*</span></span>
+                    <input
+                      name="title"
+                      type="text"
+                      maxlength="300"
+                      placeholder="Например, Интерстеллар"
+                      required
+                    />
+                  </label>
+
+                  <label class="field">
+                    <span>Год выпуска</span>
+                    <input
+                      name="releaseYear"
+                      type="number"
+                      min="1"
+                      max="2147483647"
+                      step="1"
+                      inputmode="numeric"
+                      placeholder="2014"
+                    />
+                  </label>
+
+                  <label class="field">
+                    <span>Статус</span>
+                    <select name="status">
+                      <option value="PLANNED">Планирую посмотреть</option>
+                      <option value="WATCHED">Просмотрен</option>
+                    </select>
+                  </label>
+
+                  <label class="field field--wide">
+                    <span>Оценка</span>
+                    <input
+                      name="rating"
+                      type="number"
+                      min="1"
+                      max="10"
+                      step="1"
+                      inputmode="numeric"
+                      placeholder="От 1 до 10"
+                      disabled
+                    />
+                    <small>
+                      Оценку можно поставить просмотренному фильму.
+                    </small>
+                  </label>
+
+                  <label class="field field--wide">
+                    <span>Заметка</span>
+                    <textarea
+                      name="notes"
+                      rows="4"
+                      placeholder="Что хочется запомнить об этом фильме?"
+                    ></textarea>
+                  </label>
+
+                  <div class="form-actions field--wide">
+                    <button
+                      class="button button--primary"
+                      type="submit"
+                    >
+                      Добавить фильм
+                    </button>
+                    <button
+                      id="cancel-edit-button"
+                      class="button button--secondary"
+                      type="button"
+                      hidden
+                    >
+                      Отменить
+                    </button>
+                  </div>
+                </fieldset>
+
+                <p
+                  id="form-feedback"
+                  class="status-message"
+                  role="status"
+                  aria-live="polite"
+                ></p>
+              </form>
+            </section>
+
+            <section class="collection-panel" aria-label="Список фильмов">
+              <div class="collection-toolbar panel">
+                <label class="field field--compact">
+                  <span>Показать</span>
+                  <select id="status-filter">
+                    <option value="">Все фильмы</option>
+                    <option value="PLANNED">Запланированные</option>
+                    <option value="WATCHED">Просмотренные</option>
+                  </select>
+                </label>
+
+                <button
+                  id="refresh-button"
+                  class="button button--secondary"
+                  type="button"
+                >
+                  Обновить
+                </button>
+              </div>
+
+              <p
+                id="feedback"
+                class="status-message collection-feedback"
+                role="status"
+                aria-live="polite"
+              ></p>
+              <p
+                id="action-feedback"
+                class="status-message"
+                role="status"
+                aria-live="polite"
+              ></p>
+
+              <ul id="entries" class="movie-list"></ul>
+            </section>
+          </div>
+
+          <footer class="catalog-attribution">
+            <span>Данные о фильмах предоставляет</span>
+            <a href="https://www.omdbapi.com" target="_blank" rel="noreferrer">
+              OMDb API
+            </a>
+          </footer>
+        </section>
+      </main>
+    </div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

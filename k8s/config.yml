@@ -17,3 +17,4 @@ metadata:
 type: Opaque
 stringData:
   DB_PASSWORD: training-only-password
+  OMDB_API_KEY: ""

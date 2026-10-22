@@ -1,7 +1,8 @@
-package dev.vladimir.moviejournal.diary;
+package dev.vladimir.moviejournal.diary.api;
 
-import dev.vladimir.moviejournal.diary.dto.CreateDiaryEntryRequest;
-import dev.vladimir.moviejournal.diary.dto.DiaryEntryResponse;
+import dev.vladimir.moviejournal.diary.CatalogImportService;
+import dev.vladimir.moviejournal.diary.DiaryEntryService;
+import dev.vladimir.moviejournal.diary.DiaryStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -20,10 +21,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.vladimir.moviejournal.config.PasswordConfiguration;
+import dev.vladimir.moviejournal.config.SecurityConfiguration;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import static org.hamcrest.Matchers.hasItem;
 
 @WebMvcTest(DiaryEntryController.class)
+@Import({
+        SecurityConfiguration.class,
+        PasswordConfiguration.class
+})
+@WithMockUser(username = "vladimir")
 class DiaryEntryControllerTest {
 
     @Autowired
@@ -31,6 +44,12 @@ class DiaryEntryControllerTest {
 
     @MockitoBean
     private DiaryEntryService diaryEntryService;
+
+    @MockitoBean
+    private CatalogImportService catalogImportService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     @Test
     void createsEntryAndReturnsCreated() throws Exception {
@@ -49,13 +68,20 @@ class DiaryEntryControllerTest {
                 2014,
                 DiaryStatus.WATCHED,
                 (short) 9,
-                "Отличный фильм"
+                "Отличный фильм",
+                null,
+                null,
+                null,
+                null,
+                java.util.List.of(),
+                java.util.List.of()
         );
 
-        when(diaryEntryService.create(expectedRequest))
+        when(diaryEntryService.create("vladimir", expectedRequest))
                 .thenReturn(response);
 
         mockMvc.perform(post("/api/diary-entries")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -76,12 +102,65 @@ class DiaryEntryControllerTest {
                 .andExpect(jsonPath("$.rating").value(9))
                 .andExpect(jsonPath("$.notes").value("Отличный фильм"));
 
-        verify(diaryEntryService).create(expectedRequest);
+        verify(diaryEntryService).create("vladimir", expectedRequest);
+    }
+
+    @Test
+    void importsSelectedCatalogMovie() throws Exception {
+        ImportDiaryEntryRequest expectedRequest =
+                new ImportDiaryEntryRequest(
+                        "tt0816692",
+                        DiaryStatus.PLANNED,
+                        null,
+                        "Посмотреть позже"
+                );
+        DiaryEntryResponse response = new DiaryEntryResponse(
+                43L,
+                "Interstellar",
+                2014,
+                DiaryStatus.PLANNED,
+                null,
+                "Посмотреть позже",
+                "omdb",
+                "tt0816692",
+                "A team travels through a wormhole.",
+                "https://example.com/poster.jpg",
+                java.util.List.of("Adventure", "Drama", "Sci-Fi"),
+                java.util.List.of()
+        );
+
+        when(catalogImportService.importMovie(
+                "vladimir",
+                expectedRequest
+        )).thenReturn(response);
+
+        mockMvc.perform(post("/api/diary-entries/from-catalog")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "catalogId": "tt0816692",
+                                  "status": "PLANNED",
+                                  "notes": "Посмотреть позже"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(43))
+                .andExpect(jsonPath("$.catalogProvider").value("omdb"))
+                .andExpect(jsonPath("$.catalogId").value("tt0816692"))
+                .andExpect(jsonPath("$.genres[0]").value("Adventure"))
+                .andExpect(jsonPath("$.title").value("Interstellar"));
+
+        verify(catalogImportService).importMovie(
+                "vladimir",
+                expectedRequest
+        );
     }
 
     @Test
     void rejectsRatingForPlannedMovie() throws Exception {
         mockMvc.perform(post("/api/diary-entries")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -96,7 +175,9 @@ class DiaryEntryControllerTest {
                 .andExpect(jsonPath("$.errors[*].field")
                         .value(hasItem("ratingAllowed")))
                 .andExpect(jsonPath("$.errors[*].message")
-                        .value(hasItem("Only watched movies can have a rating")));
+                        .value(hasItem(
+                                "Оценку можно поставить только "
+                                        + "просмотренному фильму")));
 
         verifyNoInteractions(diaryEntryService);
     }
@@ -104,6 +185,7 @@ class DiaryEntryControllerTest {
     @Test
     void rejectsBlankTitle() throws Exception {
         mockMvc.perform(post("/api/diary-entries")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -116,7 +198,7 @@ class DiaryEntryControllerTest {
                         MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.detail")
-                        .value("Request validation failed"))
+                        .value("Проверьте заполнение полей"))
                 .andExpect(jsonPath("$.instance")
                         .value("/api/diary-entries"))
                 .andExpect(jsonPath("$.errors[*].field")
@@ -127,7 +209,7 @@ class DiaryEntryControllerTest {
 
     @Test
     void returnsNotFoundWhenEntryIsMissing() throws Exception {
-        when(diaryEntryService.findById(999L))
+        when(diaryEntryService.findById("vladimir", 999L))
                 .thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/diary-entries/999"))
@@ -140,17 +222,19 @@ class DiaryEntryControllerTest {
                 .andExpect(jsonPath("$.instance")
                         .value("/api/diary-entries/999"));
 
-        verify(diaryEntryService).findById(999L);
+        verify(diaryEntryService).findById("vladimir", 999L);
     }
 
     @Test
     void deletesEntryAndReturnsNoContent() throws Exception {
-        when(diaryEntryService.delete(42L)).thenReturn(true);
+        when(diaryEntryService.delete("vladimir", 42L))
+                .thenReturn(true);
 
-        mockMvc.perform(delete("/api/diary-entries/42"))
+        mockMvc.perform(delete("/api/diary-entries/42")
+                        .with(csrf()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
-        verify(diaryEntryService).delete(42L);
+        verify(diaryEntryService).delete("vladimir", 42L);
     }
 }

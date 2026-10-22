@@ -1,3 +1,8 @@
+import {
+  apiFetch,
+  readProblemMessage,
+} from './http.js';
+
 export async function getDiaryEntries(status = '') {
   let url = '/api/diary-entries';
 
@@ -6,21 +11,38 @@ export async function getDiaryEntries(status = '') {
     url += `?${params.toString()}`;
   }
 
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     headers: {
-      Accept: 'application/json',
+      Accept: 'application/json, application/problem+json',
     },
   });
 
+  handleExpiredSession(response);
+
   if (!response.ok) {
-    throw new Error(`Ошибка загрузки дневника: HTTP ${response.status}`);
+    throw new Error(await readProblemMessage(
+      response,
+      `Ошибка загрузки дневника: HTTP ${response.status}`
+    ));
   }
 
   return response.json();
 }
 
 export function createDiaryEntry(entry) {
-  return sendDiaryEntryRequest('/api/diary-entries', 'POST', entry);
+  return sendDiaryEntryRequest(
+    '/api/diary-entries',
+    'POST',
+    entry
+  );
+}
+
+export function importCatalogDiaryEntry(entry) {
+  return sendDiaryEntryRequest(
+    '/api/diary-entries/from-catalog',
+    'POST',
+    entry
+  );
 }
 
 export function updateDiaryEntry(id, entry) {
@@ -60,10 +82,12 @@ async function sendDiaryEntryRequest(url, method, entry) {
   let response;
 
   try {
-    response = await fetch(url, options);
+    response = await apiFetch(url, options);
   } catch (error) {
     throw new Error(uncertainMessage, { cause: error });
   }
+
+  handleExpiredSession(response);
 
   if (response.ok) {
     return;
@@ -77,14 +101,24 @@ async function sendDiaryEntryRequest(url, method, entry) {
     throw new Error('Запись не найдена. Обновите список.');
   }
 
-  const problem = await response.json().catch(() => null);
-  const messages = problem?.errors
-    ?.map((error) => error.message)
-    .join(' ');
-
   const fallbackMessage = isDelete
     ? 'Не удалось удалить фильм.'
     : 'Не удалось сохранить фильм.';
 
-  throw new Error(messages || problem?.detail || fallbackMessage);
+  throw new Error(await readProblemMessage(
+    response,
+    fallbackMessage
+  ));
+}
+
+function handleExpiredSession(response) {
+  if (response.status !== 401) {
+    return;
+  }
+
+  window.location.reload();
+
+  throw new Error(
+    'Сеанс завершён. Выполните вход повторно.'
+  );
 }

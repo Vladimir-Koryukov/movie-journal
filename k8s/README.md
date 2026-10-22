@@ -38,8 +38,8 @@ eval "$(minikube -p minikube docker-env)"
 Соберите образы по очереди, дожидаясь успешного завершения каждой команды:
 
 ```shell
-docker build --progress=plain -t movie-journal-backend:0.2.0 ./backend
-docker build --progress=plain -t movie-journal-frontend:0.2.0 ./frontend
+docker build --progress=plain -t movie-journal-backend:0.3.0 ./backend
+docker build --progress=plain -t movie-journal-frontend:0.3.0 ./frontend
 docker pull postgres:18-alpine
 ```
 
@@ -66,13 +66,15 @@ minikube -p minikube image ls
 Если образы уже собраны в локальном Docker вне Minikube, вместо повторной сборки загрузите их:
 
 ```shell
-minikube -p minikube image load --daemon movie-journal-backend:0.2.0
-minikube -p minikube image load --daemon movie-journal-frontend:0.2.0
+minikube -p minikube image load --daemon movie-journal-backend:0.3.0
+minikube -p minikube image load --daemon movie-journal-frontend:0.3.0
 ```
 
 ## Настройки и база данных
 
-`config.yml` содержит параметры подключения в ConfigMap и пример пароля в Secret. Перед первым запуском замените `training-only-password` своим значением. Не публикуйте файл с реальным паролем. Изменение Secret после создания базы автоматически не меняет пароль пользователя PostgreSQL. Файл `.env` для этого запуска не используется.
+`config.yml` содержит параметры подключения в ConfigMap, пример пароля и пустое поле `OMDB_API_KEY` в Secret. Перед первым запуском замените `training-only-password` своим значением и при необходимости укажите ключ со [страницы OMDb API Key](https://www.omdbapi.com/apikey.aspx). Без ключа ручное добавление фильмов работает, а поиск сообщает, что каталог не настроен. Не публикуйте файл с реальными секретами. Изменение Secret после создания базы автоматически не меняет пароль пользователя PostgreSQL. Файл `.env` для этого запуска не используется.
+
+В Deployment backend включено предпочтение IPv4 для внешних запросов. Это требуется в кластерах, где DNS возвращает IPv6-адрес OMDb, но IPv6-маршрут отсутствует.
 
 ```shell
 kubectl apply -f k8s/namespace.yml

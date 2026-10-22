@@ -99,7 +99,7 @@ cd ../../..
 
 ## Формат событий
 
-Backend выводит ECS JSON с полями `@timestamp`, `log.level`, `message` и `service.name`. Access-логи Nginx содержат `timestamp`, `level`, `message`, `service.name`, HTTP-метод, путь, статус и время обработки запроса. Для HTTP 4xx Nginx записывает уровень `warn`, для 5xx — `error`.
+Backend выводит ECS JSON с полями `@timestamp`, `log.level`, `message` и `service.name`. При регистрации, входе, изменениях дневника и обращениях к OMDb он также добавляет `event_name`, `outcome` и безопасные технические идентификаторы. Пароли, ключ OMDb, заметки и поисковые запросы не журналируются. Access-логи Nginx содержат `timestamp`, `level`, `message`, `service.name`, HTTP-метод, путь, статус и время обработки запроса. Для HTTP 4xx Nginx записывает уровень `warn`, для 5xx — `error`.
 
 Vector приводит время к полю `timestamp`, а уровень — к `level` в нижнем регистре, сохраняя сведения о Pod и контейнере. В VictoriaLogs время доступно как `_time`, сообщение — как `_msg`, сервис — как `service.name`. Backend использует имя `movie-journal`, frontend — `movie-journal-frontend`.
 
@@ -155,7 +155,7 @@ _time:60m structured:true service.name:movie-journal-frontend | top 5 by (method
 
 Для агрегатов удобно выбрать вкладку `JSON`; в режиме `Table` при необходимости добавьте столбцы результата в настройках таблицы.
 
-Для фиксации результата сохраните скриншот интерфейса с текстом запроса, интервалом времени и полученными строками или таблицей. Синтаксис описан в [документации LogsQL](https://docs.victoriametrics.com/victorialogs/logsql/).
+Дополнительные конструкции и функции запросов описаны в [документации LogsQL](https://docs.victoriametrics.com/victorialogs/logsql/).
 
 ## Диагностика и обновление
 

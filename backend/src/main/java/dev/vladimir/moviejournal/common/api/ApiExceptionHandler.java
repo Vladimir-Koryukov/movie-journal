@@ -29,13 +29,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                         error.getField(),
                         Objects.requireNonNullElse(
                                 error.getDefaultMessage(),
-                                "Invalid value"
+                                "Некорректное значение"
                         )
                 ))
                 .toList();
 
         ProblemDetail problem = exception.getBody();
-        problem.setDetail("Request validation failed");
+        problem.setDetail("Проверьте заполнение полей");
         problem.setProperty("errors", errors);
 
         return handleExceptionInternal(

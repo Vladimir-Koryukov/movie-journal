@@ -1,6 +1,7 @@
 package dev.vladimir.moviejournal.diary;
 
 import dev.vladimir.moviejournal.movie.Movie;
+import dev.vladimir.moviejournal.user.AppUser;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -8,14 +9,26 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DiaryEntryTest {
 
+    private AppUser createOwner() {
+        return new AppUser("vladimir", "test-password-hash");
+    }
+
     @Test
     void allowsEntriesWithoutRating() {
         DiaryEntry planned = new DiaryEntry(
-                createMovie(), DiaryStatus.PLANNED, null, "Посмотреть"
+                createOwner(),
+                createMovie(),
+                DiaryStatus.PLANNED,
+                null,
+                "Посмотреть"
         );
 
         DiaryEntry watched = new DiaryEntry(
-                createMovie(), DiaryStatus.WATCHED, null, "Без оценки"
+                createOwner(),
+                createMovie(),
+                DiaryStatus.WATCHED,
+                null,
+                "Без оценки"
         );
 
         assertThat(planned.getRating()).isNull();
@@ -25,24 +38,37 @@ class DiaryEntryTest {
     @Test
     void rejectsRatingForPlannedMovie() {
         assertThatThrownBy(() -> new DiaryEntry(
-                createMovie(), DiaryStatus.PLANNED, (short) 8, null
+                createOwner(),
+                createMovie(),
+                DiaryStatus.PLANNED,
+                (short) 8,
+                null
         )).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void rejectsRatingOutsideAllowedRange() {
         assertThatThrownBy(() -> new DiaryEntry(
-                createMovie(), DiaryStatus.WATCHED, (short) 0, null
+                createOwner(),
+                createMovie(),
+                DiaryStatus.WATCHED,
+                (short) 0,
+                null
         )).isInstanceOf(IllegalArgumentException.class);
 
         assertThatThrownBy(() -> new DiaryEntry(
-                createMovie(), DiaryStatus.WATCHED, (short) 11, null
+                createOwner(),
+                createMovie(),
+                DiaryStatus.WATCHED,
+                (short) 11,
+                null
         )).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void keepsPreviousStateWhenUpdateFails() {
         DiaryEntry entry = new DiaryEntry(
+                createOwner(),
                 createMovie(),
                 DiaryStatus.WATCHED,
                 (short) 8,
@@ -63,6 +89,7 @@ class DiaryEntryTest {
     @Test
     void canMarkPlannedMovieAsWatched() {
         DiaryEntry entry = new DiaryEntry(
+                createOwner(),
                 createMovie(),
                 DiaryStatus.PLANNED,
                 null,
@@ -78,6 +105,19 @@ class DiaryEntryTest {
         assertThat(entry.getStatus()).isEqualTo(DiaryStatus.WATCHED);
         assertThat(entry.getRating()).isEqualTo((short) 10);
         assertThat(entry.getNotes()).isEqualTo("Понравился саундтрек");
+    }
+
+    @Test
+    void rejectsMissingOwner() {
+        assertThatThrownBy(() -> new DiaryEntry(
+                null,
+                createMovie(),
+                DiaryStatus.PLANNED,
+                null,
+                null
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Owner must not be null");
     }
 
     private Movie createMovie() {

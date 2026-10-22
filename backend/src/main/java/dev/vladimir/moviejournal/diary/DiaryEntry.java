@@ -1,6 +1,7 @@
 package dev.vladimir.moviejournal.diary;
 
 import dev.vladimir.moviejournal.movie.Movie;
+import dev.vladimir.moviejournal.user.AppUser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -20,6 +22,10 @@ public class DiaryEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false)
+    private AppUser owner;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "movie_id", nullable = false, unique = true)
@@ -38,22 +44,30 @@ public class DiaryEntry {
     }
 
     public DiaryEntry(
+            AppUser owner,
             Movie movie,
             DiaryStatus status,
             Short rating,
             String notes
     ) {
+        if (owner == null) {
+            throw new IllegalArgumentException("Owner must not be null");
+        }
         if (movie == null) {
-            throw new IllegalArgumentException(
-                    "Movie must not be null");
+            throw new IllegalArgumentException("Movie must not be null");
         }
 
         applyDetails(status, rating, notes);
+        this.owner = owner;
         this.movie = movie;
     }
 
     public Long getId() {
         return id;
+    }
+
+    public AppUser getOwner() {
+        return owner;
     }
 
     public Movie getMovie() {
