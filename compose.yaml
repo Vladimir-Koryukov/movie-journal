@@ -13,6 +13,7 @@ x-backend: &backend
     DB_USERNAME: ${POSTGRES_USER:-movie_journal_app}
     DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
     PORT: "8080"
+    MANAGEMENT_PORT: "9090"
     OMDB_API_KEY: ${OMDB_API_KEY:-}
     JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
   init: true
@@ -60,7 +61,7 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://127.0.0.1:8080/actuator/health"]
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "3", "http://127.0.0.1:9090/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 12

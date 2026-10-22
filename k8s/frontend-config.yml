@@ -35,6 +35,12 @@ data:
             keepalive 16;
         }
 
+        upstream movie_journal_management {
+            zone movie_journal_management 64k;
+            server backend:9090;
+            keepalive 4;
+        }
+
         server {
             listen 80;
             server_name _;
@@ -58,7 +64,7 @@ data:
             }
 
             location = /actuator/health {
-                proxy_pass http://movie_journal_backend;
+                proxy_pass http://movie_journal_management;
             }
 
             location = /healthz {

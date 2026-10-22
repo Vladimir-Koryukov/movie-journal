@@ -5,7 +5,7 @@
 ## Требования
 
 - Работающий Docker Engine или Docker Desktop с Linux-контейнерами.
-- Minikube и kubectl.
+- Minikube, kubectl и Helm 3.
 - 2 CPU и 4 ГБ RAM для кластера, доступ в Интернет для первой сборки.
 
 Java, Maven, Node.js и PostgreSQL отдельно устанавливать не требуется. Все команды выполняются из корня проекта.
@@ -84,7 +84,7 @@ kubectl rollout status -n movie-journal statefulset/db --timeout=180s
 kubectl get pods,pvc -n movie-journal
 ```
 
-Ожидается `db-0` — `1/1 Running`, PVC `data-db-0` — `Bound`.
+Ожидается `db-0` — `2/2 Running` (PostgreSQL и exporter), PVC `data-db-0` — `Bound`.
 
 ## Миграция и приложение
 
@@ -137,7 +137,7 @@ kubectl logs -n movie-journal deployment/backend --tail=60
 kubectl logs -n movie-journal job/migrate --tail=60
 ```
 
-Для централизованного сбора логов приложения доступны [VictoriaLogs и Vector](logging/README.md): манифесты, настройка доступа и примеры запросов LogsQL.
+Для централизованного сбора логов приложения доступны [VictoriaLogs и Vector](logging/README.md): манифесты, настройка доступа и примеры запросов LogsQL. Сбор метрик приложения и PostgreSQL через VictoriaMetrics описан в [инструкции мониторинга](monitoring/README.md).
 
 ## Остановка
 

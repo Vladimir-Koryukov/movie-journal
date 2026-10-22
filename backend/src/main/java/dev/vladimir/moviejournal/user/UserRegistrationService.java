@@ -1,5 +1,6 @@
 package dev.vladimir.moviejournal.user;
 
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,13 +23,16 @@ public class UserRegistrationService {
 
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final BusinessMetrics metrics;
 
     public UserRegistrationService(
             AppUserRepository userRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            BusinessMetrics metrics
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.metrics = metrics;
     }
 
     public RegisteredUser register(String login, String rawPassword) {
@@ -61,6 +65,7 @@ public class UserRegistrationService {
                 .addKeyValue("outcome", "success")
                 .addKeyValue("user_id", savedUser.getId())
                 .log("User registered");
+        metrics.recordRegistrationSuccess();
 
         return RegisteredUser.from(savedUser);
     }
@@ -117,6 +122,7 @@ public class UserRegistrationService {
                 .addKeyValue("outcome", "rejected")
                 .addKeyValue("reason", reason)
                 .log("User registration rejected");
+        metrics.recordRegistrationRejected(reason);
     }
 
     public record RegisteredUser(Long id, String login, Instant createdAt) {

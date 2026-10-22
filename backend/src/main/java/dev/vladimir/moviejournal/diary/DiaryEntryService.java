@@ -10,6 +10,7 @@ import dev.vladimir.moviejournal.movie.GenreService;
 import dev.vladimir.moviejournal.movie.Movie;
 import dev.vladimir.moviejournal.movie.MovieCastMember;
 import dev.vladimir.moviejournal.movie.MovieRepository;
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import dev.vladimir.moviejournal.user.AppUser;
 import dev.vladimir.moviejournal.user.AppUserRepository;
 import org.slf4j.Logger;
@@ -33,17 +34,20 @@ public class DiaryEntryService {
     private final DiaryEntryRepository diaryEntryRepository;
     private final AppUserRepository appUserRepository;
     private final GenreService genreService;
+    private final BusinessMetrics metrics;
 
     public DiaryEntryService(
             MovieRepository movieRepository,
             DiaryEntryRepository diaryEntryRepository,
             AppUserRepository appUserRepository,
-            GenreService genreService
+            GenreService genreService,
+            BusinessMetrics metrics
     ) {
         this.movieRepository = movieRepository;
         this.diaryEntryRepository = diaryEntryRepository;
         this.appUserRepository = appUserRepository;
         this.genreService = genreService;
+        this.metrics = metrics;
     }
 
     @Transactional
@@ -62,6 +66,7 @@ public class DiaryEntryService {
         );
 
         logCreated(savedEntry, "manual");
+        metrics.recordManualDiaryEntryCreated(savedEntry.getStatus());
         return toResponse(savedEntry);
     }
 
@@ -97,6 +102,7 @@ public class DiaryEntryService {
         );
 
         logCreated(savedEntry, catalogMovie.provider());
+        metrics.recordCatalogDiaryEntryCreated(savedEntry.getStatus());
         return toResponse(savedEntry);
     }
 
@@ -120,6 +126,7 @@ public class DiaryEntryService {
 
         if (found.isEmpty()) {
             logNotFound("diary_entry_updated", id);
+            metrics.recordDiaryEntryUpdateNotFound();
             return Optional.empty();
         }
 
@@ -135,6 +142,7 @@ public class DiaryEntryService {
         );
 
         logChanged("diary_entry_updated", entry);
+        metrics.recordDiaryEntryUpdated(entry.getStatus());
         return Optional.of(toResponse(entry));
     }
 
@@ -145,6 +153,7 @@ public class DiaryEntryService {
 
         if (entryOptional.isEmpty()) {
             logNotFound("diary_entry_deleted", id);
+            metrics.recordDiaryEntryDeleteNotFound();
             return false;
         }
 
@@ -154,6 +163,7 @@ public class DiaryEntryService {
         diaryEntryRepository.delete(entry);
         movieRepository.delete(movie);
         logChanged("diary_entry_deleted", entry);
+        metrics.recordDiaryEntryDeleted();
 
         return true;
     }

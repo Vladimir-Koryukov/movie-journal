@@ -3,6 +3,7 @@ package dev.vladimir.moviejournal.diary.api;
 import dev.vladimir.moviejournal.diary.CatalogImportService;
 import dev.vladimir.moviejournal.diary.DiaryEntryService;
 import dev.vladimir.moviejournal.diary.DiaryStatus;
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -47,6 +48,9 @@ class DiaryEntryControllerTest {
 
     @MockitoBean
     private CatalogImportService catalogImportService;
+
+    @MockitoBean
+    private BusinessMetrics metrics;
 
     @MockitoBean
     private UserDetailsService userDetailsService;

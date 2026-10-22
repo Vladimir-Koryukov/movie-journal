@@ -1,0 +1,19 @@
+# Runtime and HTTP metrics
+sum(rate(http_server_requests_seconds_count{application="movie-journal"}[1m]))
+histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application="movie-journal"}[5m])))
+sum(jvm_memory_used_bytes{application="movie-journal", area="heap"})
+
+# Business metrics
+sum by (outcome, reason) (movie_journal_user_registrations_total)
+sum by (outcome) (movie_journal_user_logins_total)
+sum by (source, status) (movie_journal_diary_entries_added_total)
+sum by (outcome, status) (movie_journal_diary_entries_updated_total)
+sum by (outcome) (movie_journal_diary_entries_deleted_total)
+sum by (provider, outcome) (movie_journal_catalog_searches_total)
+sum by (provider, outcome) (movie_journal_catalog_details_total)
+histogram_quantile(0.95, sum by (le, operation) (rate(movie_journal_catalog_request_duration_seconds_bucket[5m])))
+
+# PostgreSQL exporter
+max(pg_up)
+sum(pg_stat_activity_count{datname="movie_journal"})
+sum(pg_stat_database_xact_commit{datname="movie_journal"})

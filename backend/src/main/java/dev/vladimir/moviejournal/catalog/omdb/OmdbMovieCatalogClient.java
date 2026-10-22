@@ -6,6 +6,7 @@ import dev.vladimir.moviejournal.catalog.MovieCatalogClient;
 import dev.vladimir.moviejournal.catalog.MovieCatalogNotConfiguredException;
 import dev.vladimir.moviejournal.catalog.MovieCatalogUnavailableException;
 import dev.vladimir.moviejournal.catalog.MovieSearchResult;
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -40,15 +41,18 @@ public class OmdbMovieCatalogClient implements MovieCatalogClient {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final OmdbProperties properties;
+    private final BusinessMetrics metrics;
 
     public OmdbMovieCatalogClient(
             HttpClient omdbHttpClient,
             ObjectMapper objectMapper,
-            OmdbProperties properties
+            OmdbProperties properties,
+            BusinessMetrics metrics
     ) {
         this.httpClient = omdbHttpClient;
         this.objectMapper = objectMapper;
         this.properties = properties;
+        this.metrics = metrics;
     }
 
     @Override
@@ -69,7 +73,7 @@ public class OmdbMovieCatalogClient implements MovieCatalogClient {
                     throw apiError(response);
                 }
 
-                logRequest("search", "success", 0, null, startedAt);
+                logRequest("search", "empty", 0, null, startedAt);
                 return List.of();
             }
 
@@ -96,9 +100,10 @@ public class OmdbMovieCatalogClient implements MovieCatalogClient {
                 ));
             }
 
+            String outcome = results.isEmpty() ? "empty" : "success";
             logRequest(
                     "search",
-                    "success",
+                    outcome,
                     results.size(),
                     null,
                     startedAt
@@ -280,6 +285,9 @@ public class OmdbMovieCatalogClient implements MovieCatalogClient {
             String catalogId,
             long startedAt
     ) {
+        long durationNanos = System.nanoTime() - startedAt;
+        recordMetrics(operation, outcome, resultCount, durationNanos);
+
         var event = "error".equals(outcome)
                 ? log.atWarn()
                 : log.atInfo();
@@ -292,7 +300,7 @@ public class OmdbMovieCatalogClient implements MovieCatalogClient {
                 .addKeyValue(
                         "duration_ms",
                         TimeUnit.NANOSECONDS.toMillis(
-                                System.nanoTime() - startedAt)
+                                durationNanos)
                 );
 
         if (resultCount != null) {
@@ -303,5 +311,27 @@ public class OmdbMovieCatalogClient implements MovieCatalogClient {
         }
 
         event.log("Movie catalog request completed");
+    }
+
+    private void recordMetrics(
+            String operation,
+            String outcome,
+            Integer resultCount,
+            long durationNanos
+    ) {
+        if ("search".equals(operation)) {
+            if ("error".equals(outcome)) {
+                metrics.recordCatalogSearchFailure(durationNanos);
+            } else {
+                metrics.recordCatalogSearch(resultCount, durationNanos);
+            }
+            return;
+        }
+
+        if ("error".equals(outcome)) {
+            metrics.recordCatalogDetailsFailure(durationNanos);
+        } else {
+            metrics.recordCatalogDetailsSuccess(durationNanos);
+        }
     }
 }

@@ -10,6 +10,7 @@ import dev.vladimir.moviejournal.movie.Genre;
 import dev.vladimir.moviejournal.movie.GenreService;
 import dev.vladimir.moviejournal.movie.Movie;
 import dev.vladimir.moviejournal.movie.MovieRepository;
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import dev.vladimir.moviejournal.user.AppUser;
 import dev.vladimir.moviejournal.user.AppUserRepository;
 import org.junit.jupiter.api.Test;
@@ -35,9 +36,16 @@ class DiaryEntryServiceTest {
             mock(DiaryEntryRepository.class);
     private final AppUserRepository users = mock(AppUserRepository.class);
     private final GenreService genres = mock(GenreService.class);
+    private final BusinessMetrics metrics = mock(BusinessMetrics.class);
 
     private final DiaryEntryService service =
-            new DiaryEntryService(movies, entries, users, genres);
+            new DiaryEntryService(
+                    movies,
+                    entries,
+                    users,
+                    genres,
+                    metrics
+            );
 
     @Test
     void assignsAuthenticatedUserToNewEntry() {

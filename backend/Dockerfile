@@ -18,5 +18,5 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=build --chown=app:app /build/target/movie-journal-*.jar app.jar
 USER app
-EXPOSE 8080
+EXPOSE 8080 9090
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=60.0", "-XX:+ExitOnOutOfMemoryError", "-jar", "/app/app.jar"]

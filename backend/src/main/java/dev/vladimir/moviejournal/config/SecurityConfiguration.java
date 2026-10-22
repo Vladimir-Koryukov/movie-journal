@@ -1,5 +1,6 @@
 package dev.vladimir.moviejournal.config;
 
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -29,9 +30,14 @@ public class SecurityConfiguration {
             LoggerFactory.getLogger(SecurityConfiguration.class);
 
     private final ObjectMapper objectMapper;
+    private final BusinessMetrics metrics;
 
-    public SecurityConfiguration(ObjectMapper objectMapper) {
+    public SecurityConfiguration(
+            ObjectMapper objectMapper,
+            BusinessMetrics metrics
+    ) {
         this.objectMapper = objectMapper;
+        this.metrics = metrics;
     }
 
     @Bean
@@ -62,7 +68,8 @@ public class SecurityConfiguration {
                                 "/api/auth/csrf",
                                 "/actuator/health",
                                 "/actuator/health/liveness",
-                                "/actuator/health/readiness"
+                                "/actuator/health/readiness",
+                                "/actuator/prometheus"
                         )
                         .permitAll()
 
@@ -105,6 +112,7 @@ public class SecurityConfiguration {
                                     .addKeyValue("event_name", "user_login")
                                     .addKeyValue("outcome", "success")
                                     .log("User logged in");
+                            metrics.recordLoginSuccess();
 
                             response.setStatus(HttpStatus.NO_CONTENT.value());
                         })
@@ -121,6 +129,12 @@ public class SecurityConfiguration {
                                                     : "invalid_credentials"
                                     )
                                     .log("Login failed");
+
+                            if (serviceFailure) {
+                                metrics.recordLoginError();
+                            } else {
+                                metrics.recordLoginInvalidCredentials();
+                            }
 
                             writeProblem(
                                     response,

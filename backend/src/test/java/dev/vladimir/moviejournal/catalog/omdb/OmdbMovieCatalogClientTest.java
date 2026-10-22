@@ -3,6 +3,7 @@ package dev.vladimir.moviejournal.catalog.omdb;
 import dev.vladimir.moviejournal.catalog.CatalogMovie;
 import dev.vladimir.moviejournal.catalog.MovieCatalogNotConfiguredException;
 import dev.vladimir.moviejournal.catalog.MovieSearchResult;
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tools.jackson.databind.json.JsonMapper;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.when;
 class OmdbMovieCatalogClientTest {
 
     private final HttpClient httpClient = mock(HttpClient.class);
+    private final BusinessMetrics metrics = mock(BusinessMetrics.class);
 
     @SuppressWarnings("unchecked")
     private final HttpResponse<String> response = mock(HttpResponse.class);
@@ -158,7 +160,8 @@ class OmdbMovieCatalogClientTest {
                         apiKey,
                         maxResults,
                         maxCastMembers
-                )
+                ),
+                metrics
         );
     }
 

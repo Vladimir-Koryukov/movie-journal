@@ -12,8 +12,223 @@ data:
         type: victoriametrics-logs-datasource
         access: proxy
         url: http://victorialogs.logging.svc.cluster.local:9428
+        isDefault: false
+        editable: true
+      - name: VictoriaMetrics
+        uid: victoriametrics
+        type: prometheus
+        access: proxy
+        url: http://vmsingle-movie-journal-metrics-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8428
         isDefault: true
         editable: true
+        jsonData:
+          httpMethod: POST
+          timeInterval: 15s
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: logging
+data:
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+      - name: movie-journal
+        orgId: 1
+        folder: Movie Journal
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/movie-journal
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-movie-journal-dashboard
+  namespace: logging
+data:
+  movie-journal.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{application=\"movie-journal\"}[1m]))",
+              "legendFormat": "requests/s",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP request rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"movie-journal\"}[5m])))",
+              "legendFormat": "p95",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP latency p95",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 6, "x": 0, "y": 8},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+          "targets": [
+            {
+              "expr": "sum(jvm_memory_used_bytes{application=\"movie-journal\",area=\"heap\"})",
+              "legendFormat": "heap",
+              "refId": "A"
+            }
+          ],
+          "title": "JVM heap used",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 6, "x": 6, "y": 8},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+          "targets": [
+            {
+              "expr": "sum(pg_stat_activity_count{datname=\"movie_journal\"})",
+              "legendFormat": "connections",
+              "refId": "A"
+            }
+          ],
+          "title": "PostgreSQL connections",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 6, "x": 12, "y": 8},
+          "id": 5,
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+          "targets": [
+            {
+              "expr": "sum(movie_journal_user_registrations_total)",
+              "legendFormat": "registrations",
+              "refId": "A"
+            }
+          ],
+          "title": "Registration attempts",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 6, "x": 18, "y": 8},
+          "id": 6,
+          "options": {"displayMode": "gradient", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+          "targets": [
+            {
+              "expr": "sum by (outcome) (movie_journal_user_logins_total)",
+              "legendFormat": "{{outcome}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Login attempts by outcome",
+          "type": "bargauge"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+          "id": 7,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+          "targets": [
+            {
+              "expr": "sum by (source) (movie_journal_diary_entries_added_total)",
+              "legendFormat": "{{source}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Diary entries created",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+          "id": 8,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+          "targets": [
+            {
+              "expr": "sum by (operation, outcome) (rate(movie_journal_catalog_request_duration_seconds_count[5m]))",
+              "legendFormat": "{{operation}} / {{outcome}}",
+              "refId": "A"
+            }
+          ],
+          "title": "OMDb request rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 18, "x": 0, "y": 22},
+          "id": 9,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, operation) (rate(movie_journal_catalog_request_duration_seconds_bucket[5m])))",
+              "legendFormat": "{{operation}} p95",
+              "refId": "A"
+            }
+          ],
+          "title": "OMDb latency p95",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 6, "x": 18, "y": 22},
+          "id": 10,
+          "options": {"colorMode": "background", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "values": false}},
+          "targets": [
+            {
+              "expr": "max(pg_up)",
+              "legendFormat": "database",
+              "refId": "A"
+            }
+          ],
+          "title": "PostgreSQL exporter up",
+          "type": "stat"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 41,
+      "tags": ["movie-journal", "metrics"],
+      "templating": {"list": []},
+      "time": {"from": "now-30m", "to": "now"},
+      "timezone": "browser",
+      "title": "Movie Journal metrics",
+      "uid": "movie-journal-metrics",
+      "version": 1
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -51,10 +266,20 @@ spec:
           volumeMounts:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: movie-journal-dashboard
+              mountPath: /var/lib/grafana/dashboards/movie-journal
       volumes:
         - name: datasources
           configMap:
             name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: movie-journal-dashboard
+          configMap:
+            name: grafana-movie-journal-dashboard
 ---
 apiVersion: v1
 kind: Service

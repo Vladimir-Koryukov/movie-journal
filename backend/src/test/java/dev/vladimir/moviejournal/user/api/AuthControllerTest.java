@@ -2,6 +2,7 @@ package dev.vladimir.moviejournal.user.api;
 
 import dev.vladimir.moviejournal.config.PasswordConfiguration;
 import dev.vladimir.moviejournal.config.SecurityConfiguration;
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import dev.vladimir.moviejournal.user.AppUser;
 import dev.vladimir.moviejournal.user.AppUserRepository;
 import dev.vladimir.moviejournal.user.UserRegistrationService;
@@ -54,6 +55,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AppUserRepository userRepository;
+
+    @MockitoBean
+    private BusinessMetrics metrics;
 
     @Test
     void providesCsrfTokenWithoutAuthentication() throws Exception {

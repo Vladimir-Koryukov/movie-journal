@@ -1,0 +1,126 @@
+# Minimal VictoriaMetrics stack for a local Minikube cluster.
+defaultDashboards:
+  enabled: false
+
+syncJob:
+  enabled: false
+
+defaultRules:
+  enabled: false
+
+grafana:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+vmalert:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+kubelet:
+  enabled: false
+
+kubeApiServer:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+coreDns:
+  enabled: false
+
+kubeDns:
+  enabled: false
+
+victoria-metrics-operator:
+  serviceMonitor:
+    enabled: false
+
+vmsingle:
+  enabled: true
+  spec:
+    retentionPeriod: 7d
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    storage:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+
+vmagent:
+  enabled: true
+  rbac:
+    namespaced: false
+  spec:
+    selectAllByDefault: false
+    scrapeInterval: 15s
+    externalLabels:
+      cluster: minikube
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+    inlineScrapeConfig: |
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - action: keep
+            source_labels:
+              - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+            regex: "true"
+          - action: keep_if_equal
+            source_labels:
+              - __meta_kubernetes_pod_annotation_prometheus_io_port
+              - __meta_kubernetes_pod_container_port_number
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_pod_annotation_prometheus_io_path
+            regex: (.+)
+            target_label: __metrics_path__
+          - action: replace
+            source_labels:
+              - __address__
+              - __meta_kubernetes_pod_annotation_prometheus_io_port
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_namespace
+            target_label: kubernetes_namespace
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: kubernetes_pod_name
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_pod_label_app
+            target_label: job

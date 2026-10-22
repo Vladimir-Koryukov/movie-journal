@@ -10,6 +10,9 @@ spec:
     - name: http
       port: 8080
       targetPort: http
+    - name: management
+      port: 9090
+      targetPort: management
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -25,6 +28,10 @@ spec:
     metadata:
       labels:
         app: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: /actuator/prometheus
     spec:
       terminationGracePeriodSeconds: 40
       containers:
@@ -34,12 +41,16 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+            - name: management
+              containerPort: 9090
           envFrom:
             - configMapRef:
                 name: app-config
             - secretRef:
                 name: app-secret
           env:
+            - name: MANAGEMENT_PORT
+              value: "9090"
             - name: MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
               value: "true"
             - name: JAVA_TOOL_OPTIONS
@@ -47,20 +58,20 @@ spec:
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: http
+              port: management
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 36
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: http
+              port: management
             periodSeconds: 5
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: http
+              port: management
             periodSeconds: 10
             timeoutSeconds: 3
           resources:

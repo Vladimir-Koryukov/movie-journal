@@ -1,6 +1,7 @@
 package dev.vladimir.moviejournal.user;
 
 import dev.vladimir.moviejournal.config.PasswordConfiguration;
+import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,8 +23,13 @@ class UserRegistrationServiceTest {
             mock(AppUserRepository.class);
     private final PasswordEncoder passwordEncoder =
             new PasswordConfiguration().passwordEncoder();
+    private final BusinessMetrics metrics = mock(BusinessMetrics.class);
     private final UserRegistrationService service =
-            new UserRegistrationService(users, passwordEncoder);
+            new UserRegistrationService(
+                    users,
+                    passwordEncoder,
+                    metrics
+            );
 
     @Test
     void registersUserWithNormalizedLoginAndHashedPassword() {
