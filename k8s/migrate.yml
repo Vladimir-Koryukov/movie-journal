@@ -11,7 +11,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: movie-journal-backend:0.3.0
+          image: movie-journal-backend:0.4.0
           imagePullPolicy: IfNotPresent
           args: ["--migrate"]
           envFrom:

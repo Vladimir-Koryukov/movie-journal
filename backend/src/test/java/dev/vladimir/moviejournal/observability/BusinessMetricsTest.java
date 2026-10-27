@@ -21,10 +21,13 @@ class BusinessMetricsTest {
         metrics.recordLoginInvalidCredentials();
         metrics.recordManualDiaryEntryCreated(DiaryStatus.PLANNED);
         metrics.recordCatalogDiaryEntryCreated(DiaryStatus.WATCHED);
+        metrics.recordDuplicateCatalogImport("OMDB");
         metrics.recordDiaryEntryUpdated(DiaryStatus.WATCHED);
         metrics.recordDiaryEntryUpdateNotFound();
         metrics.recordDiaryEntryDeleted();
         metrics.recordDiaryEntryDeleteNotFound();
+        metrics.recordDiarySearch(false, 3);
+        metrics.recordDiarySearch(true, 0);
         metrics.recordCatalogSearch(3, 1_000_000L);
         metrics.recordCatalogSearch(0, 2_000_000L);
         metrics.recordCatalogSearchFailure(3_000_000L);
@@ -40,12 +43,22 @@ class BusinessMetricsTest {
         assertThat(registry.get("movie_journal.diary.entries.added")
                 .tags("source", "catalog", "status", "watched")
                 .counter().count()).isEqualTo(1);
+        assertThat(registry.get(
+                        "movie_journal.diary.catalog.imports.rejected")
+                .tags("provider", "omdb", "reason", "duplicate")
+                .counter().count()).isEqualTo(1);
         assertThat(registry.get("movie_journal.diary.entries.updated")
                 .tags("outcome", "not_found", "status", "unknown")
                 .counter().count()).isEqualTo(1);
         assertThat(registry.get("movie_journal.diary.entries.deleted")
                 .tag("outcome", "success")
                 .counter().count()).isEqualTo(1);
+        assertThat(registry.get("movie_journal.diary.searches")
+                .tags("scope", "all", "outcome", "success")
+                .counter().count()).isEqualTo(1);
+        assertThat(registry.get("movie_journal.diary.search.results")
+                .tags("scope", "all", "outcome", "success")
+                .summary().totalAmount()).isEqualTo(3);
         assertThat(registry.get("movie_journal.catalog.searches")
                 .tags("provider", "omdb", "outcome", "success")
                 .counter().count()).isEqualTo(1);

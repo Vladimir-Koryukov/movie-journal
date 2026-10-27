@@ -7,7 +7,7 @@ x-logging: &logging
     max-file: "3"
 
 x-backend: &backend
-  image: movie-journal-backend:${APP_VERSION:-0.3.0}
+  image: movie-journal-backend:${APP_VERSION:-0.4.0}
   environment:
     DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-movie_journal}
     DB_USERNAME: ${POSTGRES_USER:-movie_journal_app}
@@ -69,7 +69,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: movie-journal-frontend:${APP_VERSION:-0.3.0}
+    image: movie-journal-frontend:${APP_VERSION:-0.4.0}
     build:
       context: ./frontend
     ports:

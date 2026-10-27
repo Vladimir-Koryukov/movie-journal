@@ -3,13 +3,19 @@ import {
   readProblemMessage,
 } from './http.js';
 
-export async function getDiaryEntries(status = '') {
-  let url = '/api/diary-entries';
+export async function getDiaryEntries(filters = {}) {
+  const params = new URLSearchParams();
 
-  if (status) {
-    const params = new URLSearchParams({ status });
-    url += `?${params.toString()}`;
+  for (const [name, value] of Object.entries(filters)) {
+    if (value !== '' && value !== null && value !== undefined) {
+      params.set(name, value);
+    }
   }
+
+  const query = params.toString();
+  const url = query
+    ? `/api/diary-entries?${query}`
+    : '/api/diary-entries';
 
   const response = await apiFetch(url, {
     headers: {
@@ -90,11 +96,7 @@ async function sendDiaryEntryRequest(url, method, entry) {
   handleExpiredSession(response);
 
   if (response.ok) {
-    return;
-  }
-
-  if (response.status >= 500) {
-    throw new Error(uncertainMessage);
+    return isDelete ? undefined : response.json();
   }
 
   if (response.status === 404) {
@@ -107,7 +109,7 @@ async function sendDiaryEntryRequest(url, method, entry) {
 
   throw new Error(await readProblemMessage(
     response,
-    fallbackMessage
+    response.status >= 500 ? uncertainMessage : fallbackMessage
   ));
 }
 

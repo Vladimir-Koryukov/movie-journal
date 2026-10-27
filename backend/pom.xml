@@ -13,7 +13,7 @@
 
     <groupId>dev.vladimir</groupId>
     <artifactId>movie-journal</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <name>Movie Journal</name>
     <description>Personal movie diary API</description>
 

@@ -165,36 +165,195 @@
 
             <button
               id="logout-button"
-              class="button button--secondary"
+              class="button button--quiet"
               type="button"
             >
               Выйти
             </button>
           </header>
 
-          <div class="page-heading">
-            <div>
-              <p class="eyebrow">Коллекция</p>
-              <h2>Мои фильмы</h2>
+          <section id="collection-screen" class="screen">
+            <div class="page-heading page-heading--with-action">
+              <div>
+                <p class="eyebrow">Личная коллекция</p>
+                <h2>Мои фильмы</h2>
+                <p>Планы, впечатления и любимое кино в одном месте.</p>
+              </div>
+              <button
+                id="add-entry-button"
+                class="button button--primary button--large"
+                type="button"
+              >
+                <span aria-hidden="true">＋</span>
+                Добавить фильм
+              </button>
             </div>
-            <p>
-              Сохраняйте планы на просмотр, оценки и личные заметки.
-            </p>
-          </div>
 
-          <div class="diary-layout">
+            <form id="filters-form" class="filter-panel panel">
+              <label class="field filter-panel__search">
+                <span>Поиск в коллекции</span>
+                <input
+                  id="library-query"
+                  name="query"
+                  type="search"
+                  maxlength="100"
+                  placeholder="Название, актёр или жанр"
+                  autocomplete="off"
+                />
+              </label>
+
+              <label class="field">
+                <span>Статус</span>
+                <select id="status-filter" name="status">
+                  <option value="">Все</option>
+                  <option value="PLANNED">В планах</option>
+                  <option value="WATCHED">Просмотрен</option>
+                </select>
+              </label>
+
+              <fieldset class="filter-range">
+                <legend>Год выпуска</legend>
+                <label>
+                  <span class="visually-hidden">Год от</span>
+                  <input
+                    id="year-from-filter"
+                    name="yearFrom"
+                    type="number"
+                    min="1"
+                    placeholder="От"
+                    inputmode="numeric"
+                  />
+                </label>
+                <span aria-hidden="true">—</span>
+                <label>
+                  <span class="visually-hidden">Год до</span>
+                  <input
+                    id="year-to-filter"
+                    name="yearTo"
+                    type="number"
+                    min="1"
+                    placeholder="До"
+                    inputmode="numeric"
+                  />
+                </label>
+              </fieldset>
+
+              <fieldset class="filter-range filter-range--rating">
+                <legend>Оценка</legend>
+                <label>
+                  <span class="visually-hidden">Оценка от</span>
+                  <input
+                    id="rating-from-filter"
+                    name="ratingFrom"
+                    type="number"
+                    min="1"
+                    max="10"
+                    placeholder="От"
+                    inputmode="numeric"
+                  />
+                </label>
+                <span aria-hidden="true">—</span>
+                <label>
+                  <span class="visually-hidden">Оценка до</span>
+                  <input
+                    id="rating-to-filter"
+                    name="ratingTo"
+                    type="number"
+                    min="1"
+                    max="10"
+                    placeholder="До"
+                    inputmode="numeric"
+                  />
+                </label>
+              </fieldset>
+
+              <div class="filter-panel__actions">
+                <button class="button button--secondary" type="submit">
+                  Применить
+                </button>
+                <button
+                  id="reset-filters-button"
+                  class="button-link"
+                  type="button"
+                >
+                  Сбросить
+                </button>
+              </div>
+            </form>
+
+            <div class="collection-summary">
+              <p
+                id="feedback"
+                class="status-message"
+                role="status"
+                aria-live="polite"
+              ></p>
+              <div class="collection-summary__actions">
+                <label class="sort-control">
+                  <span>Сортировать</span>
+                  <select
+                    id="sort-filter"
+                    name="sort"
+                    form="filters-form"
+                    aria-label="Сортировка коллекции"
+                  >
+                    <option value="ADDED_DESC">Недавно добавленные</option>
+                    <option value="ADDED_ASC">Давно добавленные</option>
+                    <option value="YEAR_DESC">Год: сначала новые</option>
+                    <option value="YEAR_ASC">Год: сначала старые</option>
+                    <option value="RATING_DESC">Оценка: высокая → низкая</option>
+                    <option value="RATING_ASC">Оценка: низкая → высокая</option>
+                    <option value="TITLE_ASC">Название: А–Я</option>
+                  </select>
+                </label>
+                <button
+                  id="refresh-button"
+                  class="button-link"
+                  type="button"
+                >
+                  Обновить
+                </button>
+              </div>
+            </div>
+
+            <p
+              id="action-feedback"
+              class="status-message"
+              role="status"
+              aria-live="polite"
+            ></p>
+
+            <ul id="entries" class="movie-grid"></ul>
+          </section>
+
+          <section id="editor-screen" class="screen" hidden>
+            <button
+              id="editor-back-button"
+              class="back-button"
+              type="button"
+            >
+              <span aria-hidden="true">←</span>
+              К коллекции
+            </button>
+
+            <div class="page-heading page-heading--editor">
+              <div>
+                <p class="eyebrow">Карточка фильма</p>
+                <h2 id="editor-heading">Добавить фильм</h2>
+                <p>Найдите фильм в каталоге или заполните данные вручную.</p>
+              </div>
+            </div>
+
             <section class="panel editor-panel" aria-label="Форма фильма">
               <form id="entry-form">
                 <fieldset class="entry-form">
-                  <legend>Добавить фильм</legend>
+                  <legend class="visually-hidden">Добавить фильм</legend>
 
                   <div id="catalog-picker" class="catalog-picker field--wide">
                     <div class="catalog-picker__heading">
                       <div>
-                        <strong>Найти фильм в OMDb</strong>
-                        <p>
-                          Выберите фильм, чтобы добавить описание и актёров.
-                        </p>
+                        <strong>Поиск в OMDb</strong>
+                        <p>Описание, постер, жанры и актёры заполнятся автоматически.</p>
                       </div>
                       <span class="source-badge">OMDb</span>
                     </div>
@@ -207,7 +366,7 @@
                           type="search"
                           minlength="2"
                           maxlength="100"
-                          placeholder="Название фильма"
+                          placeholder="Например, Interstellar"
                           autocomplete="off"
                         />
                       </label>
@@ -242,13 +401,19 @@
                         class="button-link"
                         type="button"
                       >
-                        Сбросить
+                        Выбрать другой
                       </button>
                     </div>
 
                     <p class="catalog-manual-hint">
-                      Или заполните название и год вручную.
+                      OMDb лучше ищет по международному названию. Фильм всегда
+                      можно добавить вручную ниже.
                     </p>
+                  </div>
+
+                  <div class="form-section-heading field--wide">
+                    <strong>Основные данные</strong>
+                    <span>Поля со звёздочкой обязательны</span>
                   </div>
 
                   <label class="field field--wide">
@@ -284,6 +449,17 @@
                   </label>
 
                   <label class="field field--wide">
+                    <span>Жанры</span>
+                    <input
+                      name="genres"
+                      type="text"
+                      maxlength="1000"
+                      placeholder="Фантастика, драма, приключения"
+                    />
+                    <small>Для ручного добавления разделяйте жанры запятыми.</small>
+                  </label>
+
+                  <label class="field field--wide">
                     <span>Оценка</span>
                     <input
                       name="rating"
@@ -295,32 +471,26 @@
                       placeholder="От 1 до 10"
                       disabled
                     />
-                    <small>
-                      Оценку можно поставить просмотренному фильму.
-                    </small>
+                    <small>Оценку можно поставить просмотренному фильму.</small>
                   </label>
 
                   <label class="field field--wide">
-                    <span>Заметка</span>
+                    <span>Личная заметка</span>
                     <textarea
                       name="notes"
-                      rows="4"
+                      rows="5"
                       placeholder="Что хочется запомнить об этом фильме?"
                     ></textarea>
                   </label>
 
                   <div class="form-actions field--wide">
-                    <button
-                      class="button button--primary"
-                      type="submit"
-                    >
-                      Добавить фильм
+                    <button class="button button--primary" type="submit">
+                      Сохранить фильм
                     </button>
                     <button
                       id="cancel-edit-button"
                       class="button button--secondary"
                       type="button"
-                      hidden
                     >
                       Отменить
                     </button>
@@ -329,49 +499,26 @@
 
                 <p
                   id="form-feedback"
-                  class="status-message"
+                  class="status-message form-feedback"
                   role="status"
                   aria-live="polite"
                 ></p>
               </form>
             </section>
+          </section>
 
-            <section class="collection-panel" aria-label="Список фильмов">
-              <div class="collection-toolbar panel">
-                <label class="field field--compact">
-                  <span>Показать</span>
-                  <select id="status-filter">
-                    <option value="">Все фильмы</option>
-                    <option value="PLANNED">Запланированные</option>
-                    <option value="WATCHED">Просмотренные</option>
-                  </select>
-                </label>
+          <section id="detail-screen" class="screen" hidden>
+            <button
+              id="detail-back-button"
+              class="back-button"
+              type="button"
+            >
+              <span aria-hidden="true">←</span>
+              К коллекции
+            </button>
 
-                <button
-                  id="refresh-button"
-                  class="button button--secondary"
-                  type="button"
-                >
-                  Обновить
-                </button>
-              </div>
-
-              <p
-                id="feedback"
-                class="status-message collection-feedback"
-                role="status"
-                aria-live="polite"
-              ></p>
-              <p
-                id="action-feedback"
-                class="status-message"
-                role="status"
-                aria-live="polite"
-              ></p>
-
-              <ul id="entries" class="movie-list"></ul>
-            </section>
-          </div>
+            <article id="movie-detail" class="movie-detail panel"></article>
+          </section>
 
           <footer class="catalog-attribution">
             <span>Данные о фильмах предоставляет</span>

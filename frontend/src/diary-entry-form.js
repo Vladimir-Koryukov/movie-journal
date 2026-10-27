@@ -6,10 +6,10 @@ import {
 import { initCatalogSearch } from './catalog-search.js';
 import { requiredElement } from './dom.js';
 
-export function initEntryForm({ onSaved, onBusyChange }) {
+export function initEntryForm({ onSaved, onBusyChange, onCancel }) {
   const form = requiredElement('#entry-form');
   const fields = requiredElement('fieldset', form);
-  const legend = requiredElement('legend', form);
+  const editorHeading = requiredElement('#editor-heading');
   const submitButton = requiredElement('button[type="submit"]', form);
   const cancelButton = requiredElement('#cancel-edit-button', form);
   const feedback = requiredElement('#form-feedback', form);
@@ -19,6 +19,7 @@ export function initEntryForm({ onSaved, onBusyChange }) {
   const statusInput = form.elements.namedItem('status');
   const ratingInput = form.elements.namedItem('rating');
   const notesInput = form.elements.namedItem('notes');
+  const genresInput = form.elements.namedItem('genres');
 
   let editingId = null;
   let hasUnsavedChanges = false;
@@ -79,9 +80,8 @@ export function initEntryForm({ onSaved, onBusyChange }) {
     catalogSearch.reset();
     catalogSearch.setEditing(false);
 
-    legend.textContent = 'Добавить фильм';
-    submitButton.textContent = 'Добавить фильм';
-    cancelButton.hidden = true;
+    editorHeading.textContent = 'Добавить фильм';
+    submitButton.textContent = 'Сохранить фильм';
 
     syncRatingField();
     clearFeedback();
@@ -111,7 +111,7 @@ export function initEntryForm({ onSaved, onBusyChange }) {
     }
 
     resetForm();
-    titleInput.focus();
+    onCancel();
   });
 
   form.addEventListener('submit', async (event) => {
@@ -137,6 +137,7 @@ export function initEntryForm({ onSaved, onBusyChange }) {
         ? readOptionalNumber(ratingInput)
         : null,
       notes: notesInput.value.trim() || null,
+      genres: readGenres(genresInput.value),
     };
 
     const entryId = editingId;
@@ -191,6 +192,7 @@ export function initEntryForm({ onSaved, onBusyChange }) {
     statusInput.value = entry.status;
     ratingInput.value = entry.rating ?? '';
     notesInput.value = entry.notes ?? '';
+    genresInput.value = entry.genres?.join(', ') ?? '';
 
     titleInput.setCustomValidity('');
     syncRatingField();
@@ -198,7 +200,7 @@ export function initEntryForm({ onSaved, onBusyChange }) {
 
     hasUnsavedChanges = false;
 
-    legend.textContent = 'Редактировать фильм';
+    editorHeading.textContent = 'Редактировать фильм';
     submitButton.textContent = 'Сохранить изменения';
     cancelButton.hidden = false;
 
@@ -209,6 +211,22 @@ export function initEntryForm({ onSaved, onBusyChange }) {
 
   return {
     edit,
+    startCreate() {
+      if (fields.disabled || !canDiscardChanges()) {
+        return false;
+      }
+
+      resetForm();
+      return true;
+    },
+    requestClose() {
+      if (fields.disabled || !canDiscardChanges()) {
+        return false;
+      }
+
+      resetForm();
+      return true;
+    },
     setBusy,
     isBusy: () => fields.disabled,
     resetIfEditing(id) {
@@ -217,6 +235,16 @@ export function initEntryForm({ onSaved, onBusyChange }) {
       }
     },
   };
+}
+
+function readGenres(value) {
+  return [...new Map(value
+    .split(',')
+    .map((genre) => genre.trim())
+    .filter(Boolean)
+    .map((genre) => [genre.toLocaleLowerCase('ru-RU'), genre]))
+    .values()]
+    .slice(0, 10);
 }
 
 function readOptionalNumber(input) {

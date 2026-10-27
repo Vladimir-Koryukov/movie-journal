@@ -50,6 +50,15 @@ public class BusinessMetrics {
         diaryEntryCreatedCounter("catalog", status).increment();
     }
 
+    public void recordDuplicateCatalogImport(String provider) {
+        Counter.builder("movie_journal.diary.catalog.imports.rejected")
+                .description("Rejected catalog movie import attempts")
+                .tag("provider", provider.toLowerCase(Locale.ROOT))
+                .tag("reason", "duplicate")
+                .register(registry)
+                .increment();
+    }
+
     public void recordDiaryEntryUpdated(DiaryStatus status) {
         diaryEntryUpdatedCounter("success", statusValue(status))
                 .increment();
@@ -65,6 +74,14 @@ public class BusinessMetrics {
 
     public void recordDiaryEntryDeleteNotFound() {
         diaryEntryDeletedCounter("not_found").increment();
+    }
+
+    public void recordDiarySearch(boolean filtered, int resultCount) {
+        String scope = filtered ? "filtered" : "all";
+        String outcome = resultCount == 0 ? "empty" : "success";
+
+        diarySearchCounter(scope, outcome).increment();
+        diarySearchResults(scope, outcome).record(resultCount);
     }
 
     public void recordCatalogSearch(
@@ -137,6 +154,26 @@ public class BusinessMetrics {
     private Counter diaryEntryDeletedCounter(String outcome) {
         return Counter.builder("movie_journal.diary.entries.deleted")
                 .description("Diary entry deletion attempts")
+                .tag("outcome", outcome)
+                .register(registry);
+    }
+
+    private Counter diarySearchCounter(String scope, String outcome) {
+        return Counter.builder("movie_journal.diary.searches")
+                .description("Personal movie collection searches")
+                .tag("scope", scope)
+                .tag("outcome", outcome)
+                .register(registry);
+    }
+
+    private DistributionSummary diarySearchResults(
+            String scope,
+            String outcome
+    ) {
+        return DistributionSummary.builder("movie_journal.diary.search.results")
+                .description("Movies returned by collection searches")
+                .baseUnit("movies")
+                .tag("scope", scope)
                 .tag("outcome", outcome)
                 .register(registry);
     }

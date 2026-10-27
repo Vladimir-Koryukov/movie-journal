@@ -99,7 +99,7 @@ cd ../../..
 
 ## Формат событий
 
-Backend выводит ECS JSON с полями `@timestamp`, `log.level`, `message` и `service.name`. При регистрации, входе, изменениях дневника и обращениях к OMDb он также добавляет `event_name`, `outcome` и безопасные технические идентификаторы. Пароли, ключ OMDb, заметки и поисковые запросы не журналируются. Access-логи Nginx содержат `timestamp`, `level`, `message`, `service.name`, HTTP-метод, путь, статус и время обработки запроса. Для HTTP 4xx Nginx записывает уровень `warn`, для 5xx — `error`.
+Backend выводит ECS JSON с полями `@timestamp`, `log.level`, `message` и `service.name`. При регистрации, входе, изменениях и поиске в личной коллекции, а также обращениях к OMDb он добавляет `event_name`, `outcome` и безопасные технические признаки. Пароли, ключ OMDb, заметки и поисковые запросы не журналируются. Для поиска сохраняются только область (`all` или `filtered`) и количество результатов. Access-логи Nginx содержат `timestamp`, `level`, `message`, `service.name`, HTTP-метод, путь, статус и время обработки запроса. Для HTTP 4xx Nginx записывает уровень `warn`, для 5xx — `error`.
 
 Vector приводит время к полю `timestamp`, а уровень — к `level` в нижнем регистре, сохраняя сведения о Pod и контейнере. В VictoriaLogs время доступно как `_time`, сообщение — как `_msg`, сервис — как `service.name`. Backend использует имя `movie-journal`, frontend — `movie-journal-frontend`.
 

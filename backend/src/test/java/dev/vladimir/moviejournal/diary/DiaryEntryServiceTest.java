@@ -15,15 +15,14 @@ import dev.vladimir.moviejournal.user.AppUser;
 import dev.vladimir.moviejournal.user.AppUserRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -52,6 +51,8 @@ class DiaryEntryServiceTest {
         AppUser alice = new AppUser("alice", "test-password-hash");
 
         when(users.findByLogin("alice")).thenReturn(Optional.of(alice));
+        when(genres.resolve(List.of("Science Fiction")))
+                .thenReturn(Set.of(new Genre("Science Fiction")));
         when(entries.save(any(DiaryEntry.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -60,7 +61,8 @@ class DiaryEntryServiceTest {
                 2014,
                 DiaryStatus.PLANNED,
                 null,
-                null
+                null,
+                List.of("Science Fiction")
         ));
 
         ArgumentCaptor<DiaryEntry> savedEntry =
@@ -68,6 +70,9 @@ class DiaryEntryServiceTest {
 
         verify(entries).save(savedEntry.capture());
         assertThat(savedEntry.getValue().getOwner()).isSameAs(alice);
+        assertThat(savedEntry.getValue().getMovie().getGenres())
+                .extracting(Genre::getName)
+                .containsExactly("Science Fiction");
     }
 
     @Test
@@ -85,7 +90,8 @@ class DiaryEntryServiceTest {
                 List.of(new CatalogCastMember("Matthew McConaughey"))
         );
 
-        when(users.findByLogin("alice")).thenReturn(Optional.of(alice));
+        when(users.findByLoginForUpdate("alice"))
+                .thenReturn(Optional.of(alice));
         when(genres.resolve(catalogMovie.genres()))
                 .thenReturn(Set.of(drama));
         when(entries.save(any(DiaryEntry.class)))
@@ -124,6 +130,47 @@ class DiaryEntryServiceTest {
     }
 
     @Test
+    void rejectsDuplicateCatalogMovieForSameOwner() {
+        AppUser alice = new AppUser("alice", "test-password-hash");
+        CatalogMovie catalogMovie = new CatalogMovie(
+                "omdb",
+                "tt0816692",
+                "Interstellar",
+                2014,
+                "A team travels through a wormhole.",
+                "https://example.com/poster.jpg",
+                List.of("Adventure"),
+                List.of()
+        );
+
+        when(users.findByLoginForUpdate("alice"))
+                .thenReturn(Optional.of(alice));
+        when(entries.existsCatalogMovie(
+                "alice",
+                "omdb",
+                "tt0816692"
+        )).thenReturn(true);
+
+        assertThatThrownBy(() -> service.createFromCatalog(
+                "alice",
+                new ImportDiaryEntryRequest(
+                        "tt0816692",
+                        DiaryStatus.PLANNED,
+                        null,
+                        null
+                ),
+                catalogMovie
+        ))
+                .isInstanceOf(DuplicateCatalogMovieException.class)
+                .hasMessageContaining("Interstellar")
+                .hasMessageContaining("уже добавлен");
+
+        verify(metrics).recordDuplicateCatalogImport("omdb");
+        verify(movies, never()).save(any(Movie.class));
+        verify(entries, never()).save(any(DiaryEntry.class));
+    }
+
+    @Test
     void preventsReadingUpdatingAndDeletingAnotherUsersEntry() {
         DiaryEntry aliceEntry = entry("alice", "Alice movie");
 
@@ -143,7 +190,8 @@ class DiaryEntryServiceTest {
                 2020,
                 DiaryStatus.PLANNED,
                 null,
-                "Changed notes"
+                "Changed notes",
+                List.of("Drama")
         );
 
         assertThat(service.update("bob", 42L, update)).isEmpty();
@@ -162,23 +210,57 @@ class DiaryEntryServiceTest {
         DiaryEntry aliceEntry = entry("alice", "Alice movie");
         DiaryEntry bobEntry = entry("bob", "Bob movie");
 
-        when(entries.findAll(any(Sort.class)))
-                .thenReturn(List.of(aliceEntry, bobEntry));
-        when(entries.findAllByOwner_Login(eq("bob"), any(Sort.class)))
-                .thenReturn(List.of(bobEntry));
-        when(entries.findAllByOwner_LoginAndStatus(
-                eq("bob"),
-                eq(DiaryStatus.WATCHED),
-                any(Sort.class)
+        when(entries.search(
+                "bob",
+                null,
+                false,
+                "",
+                null,
+                null,
+                null,
+                null,
+                "ADDED_DESC"
+        )).thenReturn(List.of(bobEntry));
+        when(entries.search(
+                "bob",
+                DiaryStatus.WATCHED,
+                true,
+                "Bob",
+                2000,
+                2025,
+                (short) 7,
+                (short) 10,
+                "RATING_DESC"
         )).thenReturn(List.of(bobEntry));
 
-        assertThat(service.findAll("bob", null))
+        assertThat(service.findAll(
+                "bob",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                DiaryEntrySort.ADDED_DESC
+        ))
                 .extracting(DiaryEntryResponse::title)
                 .containsExactly("Bob movie");
 
-        assertThat(service.findAll("bob", DiaryStatus.WATCHED))
+        assertThat(service.findAll(
+                "bob",
+                DiaryStatus.WATCHED,
+                " Bob ",
+                2000,
+                2025,
+                (short) 7,
+                (short) 10,
+                DiaryEntrySort.RATING_DESC
+        ))
                 .extracting(DiaryEntryResponse::title)
                 .containsExactly("Bob movie");
+
+        verify(metrics).recordDiarySearch(false, 1);
+        verify(metrics).recordDiarySearch(true, 1);
     }
 
     private DiaryEntry entry(String ownerLogin, String title) {

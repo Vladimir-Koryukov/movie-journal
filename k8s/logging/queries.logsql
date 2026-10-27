@@ -13,8 +13,8 @@ _time:60m structured:true service.name:movie-journal-frontend | top 5 by (method
 # 5. События аутентификации и регистрации
 _time:60m structured:true event_name:~"user_.*" | sort by (_time) desc | fields _time, event_name, outcome, reason, user_id
 
-# 6. Изменения записей дневника
-_time:60m structured:true event_name:~"diary_entry_.*" | sort by (_time) desc | fields _time, event_name, outcome, source, user_id, entry_id, catalog_provider, catalog_id
+# 6. Операции с личной коллекцией
+_time:60m structured:true event_name:~"diary_entr.*" | sort by (_time) desc | fields _time, event_name, outcome, source, scope, result_count, user_id, entry_id, catalog_provider, catalog_id
 
 # 7. Обращения к каталогу OMDb
 _time:60m structured:true event_name:movie_catalog_request | sort by (_time) desc | fields _time, provider, operation, outcome, duration_ms, result_count, catalog_id

@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -47,6 +48,7 @@ public class Movie {
     private String posterUrl;
 
     @ElementCollection(fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     @CollectionTable(
             name = "movie_cast",
             joinColumns = @JoinColumn(name = "movie_id")
@@ -55,6 +57,7 @@ public class Movie {
     private List<MovieCastMember> castMembers = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     @JoinTable(
             name = "movie_genres",
             joinColumns = @JoinColumn(name = "movie_id"),
@@ -67,7 +70,16 @@ public class Movie {
     }
 
     public Movie(String title, Integer releaseYear) {
+        this(title, releaseYear, Set.of());
+    }
+
+    public Movie(
+            String title,
+            Integer releaseYear,
+            Set<Genre> genres
+    ) {
         applyDetails(title, releaseYear);
+        replaceGenres(genres);
     }
 
     public Movie(
@@ -137,6 +149,15 @@ public class Movie {
 
     public void updateDetails(String title, Integer releaseYear) {
         applyDetails(title, releaseYear);
+    }
+
+    public void replaceGenres(Set<Genre> genres) {
+        if (genres == null) {
+            throw new IllegalArgumentException("Genres must not be null");
+        }
+
+        this.genres.clear();
+        this.genres.addAll(genres);
     }
 
     private void applyDetails(String title, Integer releaseYear) {

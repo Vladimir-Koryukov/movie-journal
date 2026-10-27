@@ -15,7 +15,6 @@ import dev.vladimir.moviejournal.user.AppUser;
 import dev.vladimir.moviejournal.user.AppUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +55,12 @@ public class DiaryEntryService {
             CreateDiaryEntryRequest request
     ) {
         AppUser owner = requireOwner(ownerLogin);
-        Movie movie = new Movie(request.title(), request.releaseYear());
+        Set<Genre> genres = genreService.resolve(request.genres());
+        Movie movie = new Movie(
+                request.title(),
+                request.releaseYear(),
+                genres
+        );
         DiaryEntry savedEntry = saveEntry(
                 owner,
                 movie,
@@ -76,7 +80,26 @@ public class DiaryEntryService {
             ImportDiaryEntryRequest request,
             CatalogMovie catalogMovie
     ) {
-        AppUser owner = requireOwner(ownerLogin);
+        AppUser owner = requireOwnerForUpdate(ownerLogin);
+
+        if (diaryEntryRepository.existsCatalogMovie(
+                ownerLogin,
+                catalogMovie.provider(),
+                catalogMovie.id()
+        )) {
+            log.atWarn()
+                    .addKeyValue("event_name", "diary_entry_create_rejected")
+                    .addKeyValue("outcome", "duplicate")
+                    .addKeyValue("source", "catalog")
+                    .addKeyValue("user_id", owner.getId())
+                    .addKeyValue("catalog_provider", catalogMovie.provider())
+                    .addKeyValue("catalog_id", catalogMovie.id())
+                    .log("Duplicate catalog movie rejected");
+            metrics.recordDuplicateCatalogImport(catalogMovie.provider());
+
+            throw new DuplicateCatalogMovieException(catalogMovie.title());
+        }
+
         List<MovieCastMember> cast = catalogMovie.cast().stream()
                 .map(member -> new MovieCastMember(member.name()))
                 .toList();
@@ -135,6 +158,9 @@ public class DiaryEntryService {
                 request.title(),
                 request.releaseYear()
         );
+        entry.getMovie().replaceGenres(
+                genreService.resolve(request.genres())
+        );
         entry.updateDetails(
                 request.status(),
                 request.rating(),
@@ -171,17 +197,46 @@ public class DiaryEntryService {
     @Transactional(readOnly = true)
     public List<DiaryEntryResponse> findAll(
             String ownerLogin,
-            DiaryStatus status
+            DiaryStatus status,
+            String query,
+            Integer yearFrom,
+            Integer yearTo,
+            Short ratingFrom,
+            Short ratingTo,
+            DiaryEntrySort sort
     ) {
-        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+        boolean queryEnabled = query != null && !query.isBlank();
+        String normalizedQuery = queryEnabled
+                ? query.strip()
+                : "";
 
-        List<DiaryEntry> entries = status == null
-                ? diaryEntryRepository.findAllByOwner_Login(ownerLogin, sort)
-                : diaryEntryRepository.findAllByOwner_LoginAndStatus(
-                        ownerLogin,
-                        status,
-                        sort
-                );
+        List<DiaryEntry> entries = diaryEntryRepository.search(
+                ownerLogin,
+                status,
+                queryEnabled,
+                normalizedQuery,
+                yearFrom,
+                yearTo,
+                ratingFrom,
+                ratingTo,
+                sort.name()
+        );
+
+        boolean filtered = status != null
+                || queryEnabled
+                || yearFrom != null
+                || yearTo != null
+                || ratingFrom != null
+                || ratingTo != null;
+        String outcome = entries.isEmpty() ? "empty" : "success";
+
+        metrics.recordDiarySearch(filtered, entries.size());
+        log.atInfo()
+                .addKeyValue("event_name", "diary_entries_searched")
+                .addKeyValue("outcome", outcome)
+                .addKeyValue("scope", filtered ? "filtered" : "all")
+                .addKeyValue("result_count", entries.size())
+                .log("Diary entries searched");
 
         return entries.stream()
                 .map(this::toResponse)
@@ -190,6 +245,13 @@ public class DiaryEntryService {
 
     private AppUser requireOwner(String ownerLogin) {
         return appUserRepository.findByLogin(ownerLogin)
+                .orElseThrow(() ->
+                        new AuthenticationCredentialsNotFoundException(
+                                "Для продолжения выполните вход"));
+    }
+
+    private AppUser requireOwnerForUpdate(String ownerLogin) {
+        return appUserRepository.findByLoginForUpdate(ownerLogin)
                 .orElseThrow(() ->
                         new AuthenticationCredentialsNotFoundException(
                                 "Для продолжения выполните вход"));

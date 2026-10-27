@@ -19,8 +19,11 @@ Backend публикует OpenMetrics на отдельном management-пор
 | `movie_journal_user_registrations_total` | Counter | `outcome`, `reason` | Попытки регистрации и причины отказа |
 | `movie_journal_user_logins_total` | Counter | `outcome` | Успешные и неуспешные попытки входа |
 | `movie_journal_diary_entries_added_total` | Counter | `source`, `status` | Добавленные записи дневника из OMDb и вручную |
+| `movie_journal_diary_catalog_imports_rejected_total` | Counter | `provider`, `reason` | Отклонённые импорты фильма, включая повторное добавление |
 | `movie_journal_diary_entries_updated_total` | Counter | `outcome`, `status` | Результаты изменения записей дневника |
 | `movie_journal_diary_entries_deleted_total` | Counter | `outcome` | Результаты удаления записей дневника |
+| `movie_journal_diary_searches_total` | Counter | `scope`, `outcome` | Поиски и фильтрации в личной коллекции |
+| `movie_journal_diary_search_results_movies` | DistributionSummary | `scope`, `outcome` | Количество фильмов в результатах поиска по коллекции |
 | `movie_journal_catalog_searches_total` | Counter | `provider`, `outcome` | Результаты поисковых запросов к каталогу |
 | `movie_journal_catalog_details_total` | Counter | `provider`, `outcome` | Результаты загрузки подробной информации о фильме |
 | `movie_journal_catalog_search_results_movies` | DistributionSummary | `provider`, `outcome` | Количество фильмов в результатах поиска |

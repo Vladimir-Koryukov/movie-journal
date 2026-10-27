@@ -20,6 +20,10 @@ public class GenreService {
     public Set<Genre> resolve(List<String> names) {
         LinkedHashMap<String, String> uniqueNames = new LinkedHashMap<>();
 
+        if (names == null) {
+            return Set.of();
+        }
+
         for (String name : names) {
             if (name == null || name.isBlank()) {
                 continue;

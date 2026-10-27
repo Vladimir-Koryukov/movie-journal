@@ -217,6 +217,22 @@ data:
           ],
           "title": "PostgreSQL exporter up",
           "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 30},
+          "id": 11,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}},
+          "targets": [
+            {
+              "expr": "sum by (scope, outcome) (rate(movie_journal_diary_searches_total[5m]))",
+              "legendFormat": "{{scope}} / {{outcome}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Collection search rate",
+          "type": "timeseries"
         }
       ],
       "refresh": "10s",

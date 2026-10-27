@@ -2,35 +2,36 @@ package dev.vladimir.moviejournal.diary.api;
 
 import dev.vladimir.moviejournal.diary.CatalogImportService;
 import dev.vladimir.moviejournal.diary.DiaryEntryService;
+import dev.vladimir.moviejournal.diary.DiaryEntrySort;
 import dev.vladimir.moviejournal.diary.DiaryStatus;
+import dev.vladimir.moviejournal.diary.DuplicateCatalogMovieException;
+import dev.vladimir.moviejournal.config.PasswordConfiguration;
+import dev.vladimir.moviejournal.config.SecurityConfiguration;
 import dev.vladimir.moviejournal.observability.BusinessMetrics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import dev.vladimir.moviejournal.config.PasswordConfiguration;
-import dev.vladimir.moviejournal.config.SecurityConfiguration;
-import org.springframework.context.annotation.Import;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.test.context.support.WithMockUser;
-
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-
-import static org.hamcrest.Matchers.hasItem;
 
 @WebMvcTest(DiaryEntryController.class)
 @Import({
@@ -63,7 +64,8 @@ class DiaryEntryControllerTest {
                         2014,
                         DiaryStatus.WATCHED,
                         (short) 9,
-                        "Отличный фильм"
+                        "Отличный фильм",
+                        java.util.List.of("Фантастика")
                 );
 
         DiaryEntryResponse response = new DiaryEntryResponse(
@@ -93,7 +95,8 @@ class DiaryEntryControllerTest {
                                   "releaseYear": 2014,
                                   "status": "WATCHED",
                                   "rating": 9,
-                                  "notes": "Отличный фильм"
+                                  "notes": "Отличный фильм",
+                                  "genres": ["Фантастика"]
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -162,6 +165,39 @@ class DiaryEntryControllerTest {
     }
 
     @Test
+    void returnsConflictForDuplicateCatalogMovie() throws Exception {
+        ImportDiaryEntryRequest expectedRequest =
+                new ImportDiaryEntryRequest(
+                        "tt0816692",
+                        DiaryStatus.PLANNED,
+                        null,
+                        null
+                );
+
+        when(catalogImportService.importMovie(
+                "vladimir",
+                expectedRequest
+        )).thenThrow(new DuplicateCatalogMovieException("Interstellar"));
+
+        mockMvc.perform(post("/api/diary-entries/from-catalog")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "catalogId": "tt0816692",
+                                  "status": "PLANNED"
+                                }
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").value(
+                        "Фильм «Interstellar» уже добавлен "
+                                + "в вашу коллекцию."));
+    }
+
+    @Test
     void rejectsRatingForPlannedMovie() throws Exception {
         mockMvc.perform(post("/api/diary-entries")
                         .with(csrf())
@@ -227,6 +263,54 @@ class DiaryEntryControllerTest {
                         .value("/api/diary-entries/999"));
 
         verify(diaryEntryService).findById("vladimir", 999L);
+    }
+
+    @Test
+    void forwardsCollectionSearchFilters() throws Exception {
+        when(diaryEntryService.findAll(
+                "vladimir",
+                DiaryStatus.WATCHED,
+                "Nolan",
+                2000,
+                2025,
+                (short) 7,
+                (short) 10,
+                DiaryEntrySort.RATING_DESC
+        )).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/diary-entries")
+                        .param("status", "WATCHED")
+                        .param("query", "Nolan")
+                        .param("yearFrom", "2000")
+                        .param("yearTo", "2025")
+                        .param("ratingFrom", "7")
+                        .param("ratingTo", "10")
+                        .param("sort", "RATING_DESC"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+
+        verify(diaryEntryService).findAll(
+                "vladimir",
+                DiaryStatus.WATCHED,
+                "Nolan",
+                2000,
+                2025,
+                (short) 7,
+                (short) 10,
+                DiaryEntrySort.RATING_DESC
+        );
+    }
+
+    @Test
+    void rejectsInvalidCollectionFilterRange() throws Exception {
+        mockMvc.perform(get("/api/diary-entries")
+                        .param("yearFrom", "2025")
+                        .param("yearTo", "2000"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(
+                        "Начальный год не может быть больше конечного"));
+
+        verifyNoInteractions(diaryEntryService);
     }
 
     @Test

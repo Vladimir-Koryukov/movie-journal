@@ -38,8 +38,8 @@ eval "$(minikube -p minikube docker-env)"
 Соберите образы по очереди, дожидаясь успешного завершения каждой команды:
 
 ```shell
-docker build --progress=plain -t movie-journal-backend:0.3.0 ./backend
-docker build --progress=plain -t movie-journal-frontend:0.3.0 ./frontend
+docker build --progress=plain -t movie-journal-backend:0.4.0 ./backend
+docker build --progress=plain -t movie-journal-frontend:0.4.0 ./frontend
 docker pull postgres:18-alpine
 ```
 
@@ -66,8 +66,8 @@ minikube -p minikube image ls
 Если образы уже собраны в локальном Docker вне Minikube, вместо повторной сборки загрузите их:
 
 ```shell
-minikube -p minikube image load --daemon movie-journal-backend:0.3.0
-minikube -p minikube image load --daemon movie-journal-frontend:0.3.0
+minikube -p minikube image load --daemon movie-journal-backend:0.4.0
+minikube -p minikube image load --daemon movie-journal-frontend:0.4.0
 ```
 
 ## Настройки и база данных

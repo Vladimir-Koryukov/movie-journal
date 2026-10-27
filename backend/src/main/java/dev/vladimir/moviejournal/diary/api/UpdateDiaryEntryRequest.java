@@ -9,6 +9,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record UpdateDiaryEntryRequest(
         @NotBlank(message = "Укажите название фильма")
         @Size(
@@ -27,7 +29,15 @@ public record UpdateDiaryEntryRequest(
         @Max(value = 10, message = "Оценка должна быть от 1 до 10")
         Short rating,
 
-        String notes
+        String notes,
+
+        @Size(max = 10, message = "Укажите не более 10 жанров")
+        List<@NotBlank(
+                message = "Название жанра не должно быть пустым"
+        ) @Size(
+                max = 100,
+                message = "Название жанра не должно быть длиннее 100 символов"
+        ) String> genres
 ) {
     @AssertTrue(
             message = "Оценку можно поставить только просмотренному фильму"
