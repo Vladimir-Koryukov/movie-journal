@@ -12,3 +12,7 @@ target/
 
 # Downloaded Grafana plugin packages
 /k8s/logging/grafana/*.zip
+
+# Personal local VM startup helpers
+/scripts/setup-vm-access.ps1
+/scripts/start-movie-journal-vm.ps1
