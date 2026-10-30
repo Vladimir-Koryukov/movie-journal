@@ -54,7 +54,7 @@ victoria-metrics-operator:
 vmsingle:
   enabled: true
   spec:
-    retentionPeriod: 7d
+    retentionPeriod: 30d
     resources:
       requests:
         cpu: 100m

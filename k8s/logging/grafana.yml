@@ -42,6 +42,14 @@ data:
         editable: true
         options:
           path: /var/lib/grafana/dashboards/movie-journal
+      - name: movie-journal-slo
+        orgId: 1
+        folder: Movie Journal
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/movie-journal-slo
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -286,6 +294,8 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: movie-journal-dashboard
               mountPath: /var/lib/grafana/dashboards/movie-journal
+            - name: movie-journal-slo-dashboard
+              mountPath: /var/lib/grafana/dashboards/movie-journal-slo
       volumes:
         - name: datasources
           configMap:
@@ -296,6 +306,9 @@ spec:
         - name: movie-journal-dashboard
           configMap:
             name: grafana-movie-journal-dashboard
+        - name: movie-journal-slo-dashboard
+          configMap:
+            name: grafana-slo-dashboard
 ---
 apiVersion: v1
 kind: Service

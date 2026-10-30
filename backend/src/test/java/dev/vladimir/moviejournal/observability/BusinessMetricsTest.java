@@ -28,6 +28,7 @@ class BusinessMetricsTest {
         metrics.recordDiaryEntryDeleteNotFound();
         metrics.recordDiarySearch(false, 3);
         metrics.recordDiarySearch(true, 0);
+        metrics.recordDiarySearchFailure(true);
         metrics.recordCatalogSearch(3, 1_000_000L);
         metrics.recordCatalogSearch(0, 2_000_000L);
         metrics.recordCatalogSearchFailure(3_000_000L);
@@ -59,6 +60,9 @@ class BusinessMetricsTest {
         assertThat(registry.get("movie_journal.diary.search.results")
                 .tags("scope", "all", "outcome", "success")
                 .summary().totalAmount()).isEqualTo(3);
+        assertThat(registry.get("movie_journal.diary.searches")
+                .tags("scope", "filtered", "outcome", "error")
+                .counter().count()).isEqualTo(1);
         assertThat(registry.get("movie_journal.catalog.searches")
                 .tags("provider", "omdb", "outcome", "success")
                 .counter().count()).isEqualTo(1);

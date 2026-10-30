@@ -84,6 +84,11 @@ public class BusinessMetrics {
         diarySearchResults(scope, outcome).record(resultCount);
     }
 
+    public void recordDiarySearchFailure(boolean filtered) {
+        String scope = filtered ? "filtered" : "all";
+        diarySearchCounter(scope, "error").increment();
+    }
+
     public void recordCatalogSearch(
             int resultCount,
             long durationNanos

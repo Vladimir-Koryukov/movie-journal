@@ -75,4 +75,4 @@ docker compose down
 
 Для сбора и поиска логов приложения доступны [VictoriaLogs и Vector](k8s/logging/README.md) с примерами запросов LogsQL.
 
-Метрики Spring Boot, бизнес-операций и PostgreSQL собираются через [VictoriaMetrics и vmagent](k8s/monitoring/README.md). Для Grafana подготовлен dashboard с HTTP/JVM, PostgreSQL и бизнес-показателями.
+Метрики Spring Boot, бизнес-операций и PostgreSQL собираются через [VictoriaMetrics и vmagent](k8s/monitoring/README.md). Основные SLI оценивают доступность авторизации, личной коллекции и поиска OMDb; Blackbox Exporter дополняет их независимой end-to-end проверкой. Grafana показывает SLO, SLA и бюджет ошибок.

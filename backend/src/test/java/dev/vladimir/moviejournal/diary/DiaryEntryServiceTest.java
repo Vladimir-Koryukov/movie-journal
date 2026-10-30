@@ -263,6 +263,34 @@ class DiaryEntryServiceTest {
         verify(metrics).recordDiarySearch(true, 1);
     }
 
+    @Test
+    void recordsFailedCollectionSearch() {
+        when(entries.search(
+                "bob",
+                null,
+                true,
+                "Matrix",
+                null,
+                null,
+                null,
+                null,
+                "ADDED_DESC"
+        )).thenThrow(new IllegalStateException("Database unavailable"));
+
+        assertThatThrownBy(() -> service.findAll(
+                "bob",
+                null,
+                "Matrix",
+                null,
+                null,
+                null,
+                null,
+                DiaryEntrySort.ADDED_DESC
+        )).isInstanceOf(IllegalStateException.class);
+
+        verify(metrics).recordDiarySearchFailure(true);
+    }
+
     private DiaryEntry entry(String ownerLogin, String title) {
         return new DiaryEntry(
                 new AppUser(ownerLogin, "test-password-hash"),

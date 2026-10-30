@@ -209,25 +209,37 @@ public class DiaryEntryService {
         String normalizedQuery = queryEnabled
                 ? query.strip()
                 : "";
-
-        List<DiaryEntry> entries = diaryEntryRepository.search(
-                ownerLogin,
-                status,
-                queryEnabled,
-                normalizedQuery,
-                yearFrom,
-                yearTo,
-                ratingFrom,
-                ratingTo,
-                sort.name()
-        );
-
         boolean filtered = status != null
                 || queryEnabled
                 || yearFrom != null
                 || yearTo != null
                 || ratingFrom != null
                 || ratingTo != null;
+
+        List<DiaryEntry> entries;
+        try {
+            entries = diaryEntryRepository.search(
+                    ownerLogin,
+                    status,
+                    queryEnabled,
+                    normalizedQuery,
+                    yearFrom,
+                    yearTo,
+                    ratingFrom,
+                    ratingTo,
+                    sort.name()
+            );
+        } catch (RuntimeException exception) {
+            metrics.recordDiarySearchFailure(filtered);
+            log.atError()
+                    .setCause(exception)
+                    .addKeyValue("event_name", "diary_entries_searched")
+                    .addKeyValue("outcome", "error")
+                    .addKeyValue("scope", filtered ? "filtered" : "all")
+                    .log("Diary entries search failed");
+            throw exception;
+        }
+
         String outcome = entries.isEmpty() ? "empty" : "success";
 
         metrics.recordDiarySearch(filtered, entries.size());

@@ -1,0 +1,57 @@
+# Formal SLI calculations use a rolling 30-day window.
+# For a short demonstration, replace 30d with 5m after generating traffic.
+
+# 1. Authentication availability, percent.
+# Successful authentication and correctly rejected invalid credentials both
+# mean that the authentication service handled the user's request.
+100 *
+sum(increase(movie_journal_user_logins_total{outcome!="error"}[30d]))
+/
+sum(increase(movie_journal_user_logins_total[30d]))
+
+# 2. Personal collection search availability, percent.
+# A non-empty and an empty result are both valid business outcomes.
+100 *
+sum(increase(movie_journal_diary_searches_total{outcome!="error"}[30d]))
+/
+sum(increase(movie_journal_diary_searches_total[30d]))
+
+# 3. OMDb catalog search availability, percent.
+# An empty search result is valid; only outcome="error" is unavailable.
+100 *
+sum(increase(movie_journal_catalog_searches_total{outcome!="error"}[30d]))
+/
+sum(increase(movie_journal_catalog_searches_total[30d]))
+
+# Remaining error budget for the 99.5% personal collection SLO, percent.
+clamp_max(
+  clamp_min(
+    100 * (
+      1 -
+      (
+        (sum(increase(movie_journal_diary_searches_total{outcome="error"}[30d])) or vector(0))
+        /
+        sum(increase(movie_journal_diary_searches_total[30d]))
+      )
+      /
+      (1 - 0.995)
+    ),
+    0
+  ),
+  100
+)
+
+# Supplementary technical signals. They help diagnose failures but are not
+# counted among the three required business SLIs.
+100 * avg_over_time(probe_success{job="movie-journal-http-probe"}[30d])
+probe_success{job="movie-journal-http-probe"}
+probe_http_status_code{job="movie-journal-http-probe"}
+probe_duration_seconds{job="movie-journal-http-probe"}
+
+# General HTTP latency remains available on the technical metrics dashboard.
+histogram_quantile(
+  0.95,
+  sum by (le) (
+    rate(http_server_requests_seconds_bucket{application="movie-journal",uri!~"/actuator.*"}[30d])
+  )
+)

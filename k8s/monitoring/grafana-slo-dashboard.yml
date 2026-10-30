@@ -1,0 +1,466 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-slo-dashboard
+  namespace: logging
+  labels:
+    app: grafana
+data:
+  movie-journal-slo.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 99},
+                  {"color": "green", "value": 99.5}
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "SLO 99.5%"},
+                "properties": [
+                  {"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}},
+                  {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "SLA 99%"},
+                "properties": [
+                  {"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}},
+                  {"id": "custom.lineStyle", "value": {"dash": [4, 4], "fill": "dash"}}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "100 * (sum(increase(movie_journal_diary_searches_total{outcome!=\"error\"}[$window])) or vector(0)) / sum(increase(movie_journal_diary_searches_total[$window]))",
+              "legendFormat": "Фактический SLI",
+              "refId": "A"
+            },
+            {"expr": "vector(99.5)", "legendFormat": "SLO 99.5%", "refId": "B"},
+            {"expr": "vector(99)", "legendFormat": "SLA 99%", "refId": "C"}
+          ],
+          "title": "Доступность личной коллекции (бизнес-SLI)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 98},
+                  {"color": "green", "value": 99}
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "SLO 99%"},
+                "properties": [
+                  {"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}},
+                  {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "SLA 98%"},
+                "properties": [
+                  {"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}},
+                  {"id": "custom.lineStyle", "value": {"dash": [4, 4], "fill": "dash"}}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "100 * (sum(increase(movie_journal_user_logins_total{outcome!=\"error\"}[$window])) or vector(0)) / sum(increase(movie_journal_user_logins_total[$window]))",
+              "legendFormat": "Фактический SLI",
+              "refId": "A"
+            },
+            {"expr": "vector(99)", "legendFormat": "SLO 99%", "refId": "B"},
+            {"expr": "vector(98)", "legendFormat": "SLA 98%", "refId": "C"}
+          ],
+          "title": "Доступность авторизации (бизнес-SLI)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 90},
+                  {"color": "green", "value": 95}
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "SLO 95%"},
+                "properties": [
+                  {"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}},
+                  {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+                ]
+              },
+              {
+                "matcher": {"id": "byName", "options": "SLA 90%"},
+                "properties": [
+                  {"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}},
+                  {"id": "custom.lineStyle", "value": {"dash": [4, 4], "fill": "dash"}}
+                ]
+              }
+            ]
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "100 * (sum(increase(movie_journal_catalog_searches_total{outcome!=\"error\"}[$window])) or vector(0)) / sum(increase(movie_journal_catalog_searches_total[$window]))",
+              "legendFormat": "Фактический SLI",
+              "refId": "A"
+            },
+            {"expr": "vector(95)", "legendFormat": "SLO 95%", "refId": "B"},
+            {"expr": "vector(90)", "legendFormat": "SLA 90%", "refId": "C"}
+          ],
+          "title": "Доступность поиска OMDb (бизнес-SLI)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 99},
+                  {"color": "green", "value": 99.5}
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "100 * avg_over_time(probe_success{job=\"movie-journal-http-probe\"}[$window])",
+              "legendFormat": "Фактическая доступность",
+              "refId": "A"
+            }
+          ],
+          "title": "Техническая доступность приложения (синтетическая проверка)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "options": {
+                    "-1": {"color": "yellow", "text": "НЕТ ДАННЫХ"},
+                    "0": {"color": "red", "text": "НЕДОСТУПНО"},
+                    "1": {"color": "green", "text": "ДОСТУПНО"}
+                  },
+                  "type": "value"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "green", "value": 1}
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 6, "w": 6, "x": 0, "y": 16},
+          "id": 5,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "values": false},
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "expr": "max(last_over_time(probe_success{job=\"movie-journal-http-probe\"}[2m])) or vector(-1)",
+              "legendFormat": "Проверка",
+              "refId": "A"
+            }
+          ],
+          "title": "Текущее состояние приложения",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {"unit": "s"},
+            "overrides": []
+          },
+          "gridPos": {"h": 6, "w": 6, "x": 6, "y": 16},
+          "id": 6,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {"calcs": ["lastNotNull"], "values": false}
+          },
+          "targets": [
+            {
+              "expr": "max(last_over_time(probe_duration_seconds{job=\"movie-journal-http-probe\"}[2m]))",
+              "legendFormat": "Длительность",
+              "refId": "A"
+            }
+          ],
+          "title": "Длительность последней проверки",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "yellow", "value": 25},
+                  {"color": "green", "value": 75}
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 6, "w": 6, "x": 12, "y": 16},
+          "id": 7,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "values": false}
+          },
+          "targets": [
+            {
+              "expr": "clamp_max(clamp_min(100 * (1 - ((sum(increase(movie_journal_diary_searches_total{outcome=\"error\"}[$window])) or vector(0)) / sum(increase(movie_journal_diary_searches_total[$window]))) / (1 - 0.995)), 0), 100)",
+              "legendFormat": "Остаток",
+              "refId": "A"
+            }
+          ],
+          "title": "Остаток бюджета ошибок коллекции",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "options": {
+                    "-1": {"color": "yellow", "text": "НЕТ ДАННЫХ"},
+                    "0": {"color": "red", "text": "НЕТ ОТВЕТА"},
+                    "200": {"color": "green", "text": "HTTP 200"}
+                  },
+                  "type": "value"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "green", "value": 200},
+                  {"color": "red", "value": 201}
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 6, "w": 6, "x": 18, "y": 16},
+          "id": 8,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "values": false}
+          },
+          "targets": [
+            {
+              "expr": "max(last_over_time(probe_http_status_code{job=\"movie-journal-http-probe\"}[2m])) or vector(-1)",
+              "legendFormat": "HTTP-код",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP-ответ последней проверки",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"decimals": 0, "min": 0}, "overrides": []},
+          "gridPos": {"h": 7, "w": 8, "x": 0, "y": 22},
+          "id": 9,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(movie_journal_user_logins_total{outcome=\"success\"}[$window])) or vector(0)",
+              "legendFormat": "Успешный вход",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(movie_journal_user_logins_total{outcome=\"invalid_credentials\"}[$window])) or vector(0)",
+              "legendFormat": "Неверные данные",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(increase(movie_journal_user_logins_total{outcome=\"error\"}[$window])) or vector(0)",
+              "legendFormat": "Техническая ошибка",
+              "refId": "C"
+            }
+          ],
+          "title": "Операции авторизации",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"decimals": 0, "min": 0}, "overrides": []},
+          "gridPos": {"h": 7, "w": 8, "x": 8, "y": 22},
+          "id": 10,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(movie_journal_diary_searches_total{outcome=\"success\"}[$window])) or vector(0)",
+              "legendFormat": "Результат найден",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(movie_journal_diary_searches_total{outcome=\"empty\"}[$window])) or vector(0)",
+              "legendFormat": "Пустой результат",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(increase(movie_journal_diary_searches_total{outcome=\"error\"}[$window])) or vector(0)",
+              "legendFormat": "Техническая ошибка",
+              "refId": "C"
+            }
+          ],
+          "title": "Операции с личной коллекцией",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "victoriametrics"},
+          "fieldConfig": {"defaults": {"decimals": 0, "min": 0}, "overrides": []},
+          "gridPos": {"h": 7, "w": 8, "x": 16, "y": 22},
+          "id": 11,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(movie_journal_catalog_searches_total{outcome=\"success\"}[$window])) or vector(0)",
+              "legendFormat": "Результат найден",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(movie_journal_catalog_searches_total{outcome=\"empty\"}[$window])) or vector(0)",
+              "legendFormat": "Пустой результат",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(increase(movie_journal_catalog_searches_total{outcome=\"error\"}[$window])) or vector(0)",
+              "legendFormat": "Техническая ошибка",
+              "refId": "C"
+            }
+          ],
+          "title": "Операции поиска OMDb",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 41,
+      "tags": ["movie-journal", "sli", "slo", "sla"],
+      "templating": {
+        "list": [
+          {
+            "current": {"text": "5m", "value": "5m"},
+            "hide": 0,
+            "includeAll": false,
+            "label": "Расчётное окно",
+            "multi": false,
+            "name": "window",
+            "options": [
+              {"selected": true, "text": "5m", "value": "5m"},
+              {"selected": false, "text": "15m", "value": "15m"},
+              {"selected": false, "text": "1h", "value": "1h"},
+              {"selected": false, "text": "6h", "value": "6h"},
+              {"selected": false, "text": "24h", "value": "24h"},
+              {"selected": false, "text": "7d", "value": "7d"},
+              {"selected": false, "text": "30d", "value": "30d"}
+            ],
+            "query": "5m,15m,1h,6h,24h,7d,30d",
+            "type": "custom"
+          }
+        ]
+      },
+      "time": {"from": "now-30m", "to": "now"},
+      "timezone": "browser",
+      "title": "Movie Journal — SLI, SLO и SLA",
+      "uid": "movie-journal-slo",
+      "version": 1
+    }

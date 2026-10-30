@@ -1,0 +1,164 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blackbox-exporter-config
+  namespace: monitoring
+data:
+  blackbox.yml: |
+    modules:
+      movie_journal_health:
+        prober: http
+        timeout: 5s
+        http:
+          method: GET
+          preferred_ip_protocol: ip4
+          ip_protocol_fallback: false
+          valid_status_codes: [200]
+          fail_if_body_not_matches_regexp:
+            - '"status"\s*:\s*"UP"'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    app: blackbox-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      containers:
+        - name: blackbox-exporter
+          image: quay.io/prometheus/blackbox-exporter:v0.28.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config.file=/etc/blackbox-exporter/blackbox.yml
+          ports:
+            - name: http
+              containerPort: 9115
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox-exporter
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: blackbox-exporter-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: blackbox-exporter
+  ports:
+    - name: http
+      port: 9115
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-probe-pusher
+  namespace: monitoring
+  labels:
+    app: blackbox-probe-pusher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox-probe-pusher
+  template:
+    metadata:
+      labels:
+        app: blackbox-probe-pusher
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: pusher
+          image: movie-journal-backend:0.4.0
+          imagePullPolicy: Never
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              while true; do
+                if ! curl -fsS --get \
+                  --data-urlencode 'module=movie_journal_health' \
+                  --data-urlencode 'target=http://frontend.movie-journal.svc.cluster.local/actuator/health' \
+                  --output /tmp/probe.prom \
+                  http://blackbox-exporter.monitoring.svc.cluster.local:9115/probe; then
+                  printf '%s\n' \
+                    'probe_success 0' \
+                    'probe_duration_seconds 0' \
+                    'probe_http_status_code 0' > /tmp/probe.prom
+                fi
+
+                curl -fsS \
+                  --data-binary @/tmp/probe.prom \
+                  'http://vmagent-movie-journal-metrics-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8429/api/v1/import/prometheus?extra_label=job=movie-journal-http-probe&extra_label=instance=movie-journal-end-to-end&extra_label=service=movie-journal'
+                sleep 15
+              done
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: temporary-data
+              mountPath: /tmp
+      volumes:
+        - name: temporary-data
+          emptyDir: {}
